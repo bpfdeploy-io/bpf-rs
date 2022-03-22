@@ -1,9 +1,9 @@
 # bpf-inspect
 
-> A collection of Rust libraries to inspect BPF objects
+> A collection of Rust libraries for inspecting BPF objects
 
 ## Crates
 
 ### bpf-feature
 
-### bpf-dump
+### bpf-obj-dump
