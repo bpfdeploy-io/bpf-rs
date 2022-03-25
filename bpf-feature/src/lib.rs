@@ -1,5 +1,4 @@
-use std::path::PathBuf;
-
+use std::{hash::Hash, path::Path};
 use thiserror::Error as ThisError;
 
 #[derive(ThisError, Debug)]
@@ -7,26 +6,32 @@ pub enum DetectError {
     #[error("failed to access capabilities")]
     CapAccess,
     #[error("missing CAP_SYS_ADMIN for full feature probe")]
-    CapMissing,
+    CapSysAdmin,
     #[error("{0}")]
-    Procfs(String), // A string or another nested error?
+    Procfs(String), // should be a further nested error type rather thanString?
+    #[error("IO err: {0}")]
+    IO(#[from] std::io::Error),
 }
 
-// struct KernelConfig {}
+type ProcfsResult = Result<usize, DetectError>;
 
 #[derive(Debug)]
-struct ProcfsBased {
-    privileged_bpf_syscall: Result<bool, DetectError>,
+pub struct Runtime {
+    pub unprivileged_disabled: ProcfsResult,
+    pub jit_enable: ProcfsResult,
+    pub jit_harden: ProcfsResult,
+    pub jit_kallsyms: ProcfsResult,
+    pub jit_limit: ProcfsResult,
 }
 
-fn procfs_exists() -> Result<(), DetectError> {
+fn verify_procfs_exists() -> Result<(), DetectError> {
     // TODO: if this is the only use of nix
     // then consider just using libc
     use nix::sys::statfs::{statfs, PROC_SUPER_MAGIC};
 
     match statfs("/proc") {
         Err(err) => Err(DetectError::Procfs(format!(
-            "error looking for /proc: {}",
+            "error detecting /proc: {}",
             err
         ))),
         Ok(stat) => {
@@ -41,29 +46,42 @@ fn procfs_exists() -> Result<(), DetectError> {
     }
 }
 
-fn procfs_value(path: PathBuf) -> Result<usize, std::io::Error> {
-    Ok(10)
+fn procfs_value(path: &Path) -> ProcfsResult {
+    std::fs::read_to_string(path)?
+        .trim()
+        .parse()
+        .or(Err(DetectError::Procfs("invalid parsing".into())))
 }
 
-fn procfs_based() -> Result<ProcfsBased, DetectError> {
-    let unprivileged_bpf_disabled = procfs_value("/proc/sys/kernel/unprivileged_bpf_disabled".into())?;
-    Ok(ProcfsBased {})
+fn probe_runtime() -> Result<Runtime, DetectError> {
+    Ok(Runtime {
+        unprivileged_disabled: procfs_value(Path::new(
+            "/proc/sys/kernel/unprivileged_bpf_disabled",
+        )),
+        jit_enable: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_enable")),
+        jit_harden: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_harden")),
+        jit_kallsyms: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_kallsyms")),
+        jit_limit: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_limit")),
+    })
 }
 
 #[derive(Debug)]
 pub struct System {
+    pub runtime: Result<Runtime, DetectError>,
     // kernel_config: Result<KernelConfigFeatures, Error>,
-    procfs_based: Result<ProcfsBased, DetectError>,
 }
 
-fn system_features() -> System {
-    let procfs_based = procfs_exists().and_then(|_| procfs_based());
-    System { procfs_based }
+fn system_features() -> Result<System, DetectError> {
+    verify_procfs_exists()?;
+
+    Ok(System {
+        runtime: probe_runtime(),
+    })
 }
 
 #[derive(Debug)]
 pub struct Features {
-    system: System,
+    pub system: Result<System, DetectError>,
 }
 
 pub struct DetectOpts {
@@ -82,7 +100,7 @@ pub fn detect(opts: DetectOpts) -> Result<Features, DetectError> {
         match caps::has_cap(None, CapSet::Effective, CAP_SYS_ADMIN) {
             Ok(is_capable) => {
                 if !is_capable {
-                    return Err(DetectError::CapMissing);
+                    return Err(DetectError::CapSysAdmin);
                 }
             }
             Err(_) => return Err(DetectError::CapAccess),
