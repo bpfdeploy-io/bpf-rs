@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 caps = "0.5.3"
+flate2 = "1.0.22"
 nix = "0.23.1"
 thiserror = "1.0.30"

@@ -1,6 +1,19 @@
-use std::{hash::Hash, path::Path};
+use flate2::bufread::GzDecoder;
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{BufRead, BufReader},
+    path::Path,
+};
 use thiserror::Error as ThisError;
+// TODO: if this is the only use of nix
+// then consider just using libc
+use nix::sys::{
+    statfs::{statfs, PROC_SUPER_MAGIC},
+    utsname,
+};
 
+// TODO: consider splitting up so that library clients don't need to match against all of them?
 #[derive(ThisError, Debug)]
 pub enum DetectError {
     #[error("failed to access capabilities")]
@@ -8,9 +21,121 @@ pub enum DetectError {
     #[error("missing CAP_SYS_ADMIN for full feature probe")]
     CapSysAdmin,
     #[error("{0}")]
-    Procfs(String), // should be a further nested error type rather thanString?
-    #[error("IO err: {0}")]
+    Procfs(String), // TODO: should be a further nested error type rather thanString?
+    #[error("{0}")]
+    KernelConfig(&'static str),
+    #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
+}
+
+#[derive(Debug)]
+pub enum ConfigValue {
+    Y,
+    N,
+    M,
+    Other(String),
+    Unknown,
+}
+
+pub type KernelConfig = HashMap<&'static str, ConfigValue>;
+
+const KERNEL_CONFIG_KEYS: [&'static str; 34] = [
+    "CONFIG_BPF",
+    "CONFIG_BPF_SYSCALL",
+    "CONFIG_HAVE_EBPF_JIT",
+    "CONFIG_BPF_JIT",
+    "CONFIG_BPF_JIT_ALWAYS_ON",
+    "CONFIG_DEBUG_INFO_BTF",
+    "CONFIG_DEBUG_INFO_BTF_MODULES",
+    "CONFIG_CGROUPS",
+    "CONFIG_CGROUP_BPF",
+    "CONFIG_CGROUP_NET_CLASSID",
+    "CONFIG_SOCK_CGROUP_DATA",
+    "CONFIG_BPF_EVENTS",
+    "CONFIG_KPROBE_EVENTS",
+    "CONFIG_UPROBE_EVENTS",
+    "CONFIG_TRACING",
+    "CONFIG_FTRACE_SYSCALLS",
+    "CONFIG_FUNCTION_ERROR_INJECTION",
+    "CONFIG_BPF_KPROBE_OVERRIDE",
+    "CONFIG_NET",
+    "CONFIG_XDP_SOCKETS",
+    "CONFIG_LWTUNNEL_BPF",
+    "CONFIG_NET_ACT_BPF",
+    "CONFIG_NET_CLS_ACT",
+    "CONFIG_NET_SCH_INGRESS",
+    "CONFIG_XFRM",
+    "CONFIG_IP_ROUTE_CLASSID",
+    "CONFIG_IPV6_SEG6_BPF",
+    "CONFIG_BPF_LIRC_MODE2",
+    "CONFIG_BPF_STREAM_PARSER",
+    "CONFIG_NETFILTER_XT_MATCH_BPF",
+    "CONFIG_BPFILTER",
+    "CONFIG_BPFILTER_UMH",
+    "CONFIG_TEST_BPF",
+    "CONFIG_HZ",
+];
+
+fn probe_kernel_config() -> Result<KernelConfig, DetectError> {
+    let utsn = utsname::uname();
+
+    let config_reader: Box<dyn BufRead> =
+        match File::open(format!("/boot/config-{}", utsn.release())) {
+            Err(_) => {
+                let compressed_config = File::open("/proc/config.gz")?;
+                let decoder = GzDecoder::new(BufReader::new(compressed_config));
+                Box::new(BufReader::new(decoder))
+            }
+            Ok(f) => Box::new(BufReader::new(f)),
+        };
+
+    let mut lines_iter = config_reader.lines();
+    let _ = lines_iter
+        .next()
+        .transpose()?
+        .ok_or(DetectError::KernelConfig("could not read config"))?;
+    let line = lines_iter
+        .next()
+        .transpose()?
+        .ok_or(DetectError::KernelConfig("could not read config"))?;
+
+    if !line.starts_with("# Automatically generated file; DO NOT EDIT.") {
+        return Err(DetectError::KernelConfig(
+            "kernel config written with unknown data",
+        ));
+    }
+
+    let mut options = HashMap::from(KERNEL_CONFIG_KEYS.map(|key| (key, ConfigValue::Unknown)));
+
+    for line_item in lines_iter {
+        let line = line_item?;
+        if !line.starts_with("CONFIG_") {
+            continue;
+        }
+
+        let pieces: Vec<_> = line.split("=").collect();
+        if pieces.len() < 2 {
+            continue;
+        }
+
+        for key in KERNEL_CONFIG_KEYS {
+            if key != pieces[0] {
+                continue;
+            }
+
+            options.insert(
+                key,
+                match pieces[1] {
+                    "y" => ConfigValue::Y,
+                    "m" => ConfigValue::M,
+                    "n" => ConfigValue::N,
+                    _ => ConfigValue::Other(pieces[1].to_string()),
+                },
+            );
+        }
+    }
+
+    return Ok(options);
 }
 
 type ProcfsResult = Result<usize, DetectError>;
@@ -25,10 +150,6 @@ pub struct Runtime {
 }
 
 fn verify_procfs_exists() -> Result<(), DetectError> {
-    // TODO: if this is the only use of nix
-    // then consider just using libc
-    use nix::sys::statfs::{statfs, PROC_SUPER_MAGIC};
-
     match statfs("/proc") {
         Err(err) => Err(DetectError::Procfs(format!(
             "error detecting /proc: {}",
@@ -68,7 +189,7 @@ fn probe_runtime() -> Result<Runtime, DetectError> {
 #[derive(Debug)]
 pub struct System {
     pub runtime: Result<Runtime, DetectError>,
-    // kernel_config: Result<KernelConfigFeatures, Error>,
+    pub kernel_config: Result<KernelConfig, DetectError>,
 }
 
 fn system_features() -> Result<System, DetectError> {
@@ -76,6 +197,7 @@ fn system_features() -> Result<System, DetectError> {
 
     Ok(System {
         runtime: probe_runtime(),
+        kernel_config: probe_kernel_config(),
     })
 }
 
