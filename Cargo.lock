@@ -37,6 +37,7 @@ version = "0.1.0"
 dependencies = [
  "libbpf-sys",
  "num_enum",
+ "thiserror",
 ]
 
 [[package]]
