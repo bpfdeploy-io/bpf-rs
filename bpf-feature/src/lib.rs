@@ -4,13 +4,17 @@ use std::{
     fs::File,
     io::{BufRead, BufReader},
     path::Path,
+    ptr::null,
 };
 use thiserror::Error as ThisError;
 // TODO: if this is the only use of nix
 // then consider just using libc
-use nix::sys::{
-    statfs::{statfs, PROC_SUPER_MAGIC},
-    utsname,
+use nix::{
+    errno::{errno, Errno},
+    sys::{
+        statfs::{statfs, PROC_SUPER_MAGIC},
+        utsname,
+    },
 };
 
 // TODO: consider splitting up so that library clients don't need to match against all of them?
@@ -26,6 +30,23 @@ pub enum DetectError {
     KernelConfig(&'static str),
     #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
+}
+
+fn probe_bpf_syscall() -> bool {
+    Errno::clear();
+
+    unsafe {
+        libbpf_sys::bpf_prog_load(
+            libbpf_sys::BPF_PROG_TYPE_UNSPEC,
+            null(),
+            null(),
+            null(),
+            0,
+            null(),
+        )
+    };
+
+    Errno::last() != Errno::ENOSYS
 }
 
 #[derive(Debug)]
@@ -190,6 +211,7 @@ fn probe_runtime() -> Result<Runtime, DetectError> {
 pub struct System {
     pub runtime: Result<Runtime, DetectError>,
     pub kernel_config: Result<KernelConfig, DetectError>,
+    pub has_bpf_syscall: bool,
 }
 
 fn system_features() -> Result<System, DetectError> {
@@ -198,6 +220,7 @@ fn system_features() -> Result<System, DetectError> {
     Ok(System {
         runtime: probe_runtime(),
         kernel_config: probe_kernel_config(),
+        has_bpf_syscall: probe_bpf_syscall(),
     })
 }
 

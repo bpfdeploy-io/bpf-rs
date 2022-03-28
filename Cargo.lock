@@ -26,6 +26,7 @@ version = "0.1.0"
 dependencies = [
  "caps",
  "flate2",
+ "libbpf-sys",
  "nix",
  "thiserror",
 ]
