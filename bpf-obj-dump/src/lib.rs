@@ -1,11 +1,14 @@
+use errno::{errno, Errno};
 use libbpf_sys::bpf_prog_info;
 use num_enum::TryFromPrimitive;
-use std::{error::Error, ffi::c_void, num::TryFromIntError, os::unix::prelude::*, time::Duration};
+use std::{ffi::c_void, num::TryFromIntError, os::unix::prelude::*, time::Duration};
 use thiserror::Error as ThisError;
 
 #[derive(ThisError, Debug)]
-enum ObjDumpError {
-    #[error("conversion error: {0}")]
+pub enum ObjDumpError {
+    #[error("errno: {0}")]
+    Errno(#[from] Errno),
+    #[error("conversion: {0}")]
     Conversion(#[from] TryFromIntError),
 }
 
@@ -154,13 +157,13 @@ impl ProgramInfo {
             libbpf_sys::bpf_obj_get_info_by_fd(fd, info_ptr as *mut c_void, &mut info_len)
         };
         if err != 0 {
-            todo!()
+            Err(ObjDumpError::Errno(errno()))
         } else {
             Ok(Self::from_raw(info))
         }
     }
 
-    fn dump(fd: RawFd, dump_mode: ProgramDumpMode) -> Result<Self, Box<dyn Error>> {
+    fn dump(fd: RawFd, dump_mode: ProgramDumpMode) -> Result<Self, ObjDumpError> {
         use std::mem::{size_of, zeroed};
 
         // Get initial sizes
@@ -172,7 +175,7 @@ impl ProgramInfo {
         };
 
         if err != 0 {
-            todo!("{}", err);
+            return Err(ObjDumpError::Errno(errno()));
         }
 
         // Set up bare prog info & calculat needed mem for dump
@@ -188,7 +191,7 @@ impl ProgramInfo {
             }
         };
 
-        // TODO: does an xlated dump needed the jited allocs here?
+        // TODO: does an xlated dump needed the jited mem?
         bare.nr_jited_ksyms = info.nr_jited_ksyms;
         let jited_ksyms_size = usize::try_from(info.nr_jited_ksyms)? * size_of::<u64>();
 
@@ -250,7 +253,7 @@ impl ProgramInfo {
         };
 
         if err != 0 {
-            todo!("{}", err);
+            return Err(ObjDumpError::Errno(errno()));
         }
 
         Ok(Self::from_raw(bare))
@@ -264,7 +267,7 @@ pub enum ProgramDumpMode {
 }
 
 // Not responsible for closing it
-pub fn dump_program(fd: RawFd, dump_mode: ProgramDumpMode) -> Result<ProgramInfo, Box<dyn Error>> {
+pub fn dump_program(fd: RawFd, dump_mode: ProgramDumpMode) -> Result<ProgramInfo, ObjDumpError> {
     ProgramInfo::dump(fd, dump_mode)
 }
 

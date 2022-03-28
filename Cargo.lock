@@ -35,6 +35,7 @@ dependencies = [
 name = "bpf-obj-dump"
 version = "0.1.0"
 dependencies = [
+ "errno",
  "libbpf-sys",
  "num_enum",
  "thiserror",
