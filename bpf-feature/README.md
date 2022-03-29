@@ -28,6 +28,9 @@ bpf-feature = "0.0.1"
 - [ ] Check capabilities
 - [ ] Serde serialization
 - [ ] Documentation
+- [ ] Should be able to detect by category (system vs bpf)
+- [ ] Add device/ifindex support
+- [ ] Consider rename to bpf-probe
 
 
 

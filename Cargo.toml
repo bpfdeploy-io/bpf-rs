@@ -2,5 +2,6 @@
 
 members = [
     "bpf-feature",
-    "bpf-obj-dump"
+    "bpf-obj-dump",
+    "bpf-inspect-common",
 ]
