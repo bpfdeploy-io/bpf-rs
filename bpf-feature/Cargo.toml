@@ -10,5 +10,5 @@ caps = "0.5.3"
 flate2 = "1.0.22"
 nix = "0.23.1"
 thiserror = "1.0.30"
-libbpf-sys = "0.6.1-2"
+libbpf-sys = { path = "../libbpf-sys" }
 bpf-inspect-common = { path = "../bpf-inspect-common" }
