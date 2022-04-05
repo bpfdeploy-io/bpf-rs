@@ -1,16 +1,18 @@
+use bpf_inspect_common::{Error as BpfInspectError, ProgramType};
 use flate2::bufread::GzDecoder;
+use libbpf_sys::bpf_prog_load;
 use std::{
     collections::HashMap,
     fs::File,
     io::{BufRead, BufReader},
     path::Path,
-    ptr::null,
+    ptr,
 };
 use thiserror::Error as ThisError;
 // TODO: if this is the only use of nix
 // then consider just using libc
 use nix::{
-    errno::{errno, Errno},
+    errno::Errno,
     sys::{
         statfs::{statfs, PROC_SUPER_MAGIC},
         utsname,
@@ -28,25 +30,10 @@ pub enum DetectError {
     Procfs(String), // TODO: should be a further nested error type rather thanString?
     #[error("{0}")]
     KernelConfig(&'static str),
+    #[error("no bpf syscall on system")]
+    NoBpfSyscall,
     #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
-}
-
-fn probe_bpf_syscall() -> bool {
-    Errno::clear();
-
-    unsafe {
-        libbpf_sys::bpf_prog_load(
-            libbpf_sys::BPF_PROG_TYPE_UNSPEC,
-            null(),
-            null(),
-            null(),
-            0,
-            null(),
-        )
-    };
-
-    Errno::last() != Errno::ENOSYS
 }
 
 #[derive(Debug)]
@@ -170,6 +157,20 @@ pub struct Runtime {
     pub jit_limit: ProcfsResult,
 }
 
+impl Runtime {
+    pub fn probe() -> Result<Runtime, DetectError> {
+        Ok(Runtime {
+            unprivileged_disabled: procfs_value(Path::new(
+                "/proc/sys/kernel/unprivileged_bpf_disabled",
+            )),
+            jit_enable: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_enable")),
+            jit_harden: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_harden")),
+            jit_kallsyms: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_kallsyms")),
+            jit_limit: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_limit")),
+        })
+    }
+}
+
 fn verify_procfs_exists() -> Result<(), DetectError> {
     match statfs("/proc") {
         Err(err) => Err(DetectError::Procfs(format!(
@@ -195,38 +196,71 @@ fn procfs_value(path: &Path) -> ProcfsResult {
         .or(Err(DetectError::Procfs("invalid parsing".into())))
 }
 
-fn probe_runtime() -> Result<Runtime, DetectError> {
-    Ok(Runtime {
-        unprivileged_disabled: procfs_value(Path::new(
-            "/proc/sys/kernel/unprivileged_bpf_disabled",
-        )),
-        jit_enable: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_enable")),
-        jit_harden: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_harden")),
-        jit_kallsyms: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_kallsyms")),
-        jit_limit: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_limit")),
-    })
-}
-
 #[derive(Debug)]
 pub struct System {
     pub runtime: Result<Runtime, DetectError>,
     pub kernel_config: Result<KernelConfig, DetectError>,
-    pub has_bpf_syscall: bool,
 }
 
-fn system_features() -> Result<System, DetectError> {
-    verify_procfs_exists()?;
+impl System {
+    pub fn features() -> Result<System, DetectError> {
+        verify_procfs_exists()?;
 
-    Ok(System {
-        runtime: probe_runtime(),
-        kernel_config: probe_kernel_config(),
-        has_bpf_syscall: probe_bpf_syscall(),
-    })
+        Ok(System {
+            runtime: Runtime::probe(),
+            kernel_config: probe_kernel_config(),
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct Bpf {
+    pub has_bpf_syscall: bool,
+    pub program_types: HashMap<ProgramType, Result<bool, BpfInspectError>>,
+}
+
+impl Bpf {
+    fn probe_syscall() -> bool {
+        Errno::clear();
+        unsafe {
+            bpf_prog_load(
+                ProgramType::Unspec.into(),
+                ptr::null(),
+                ptr::null(),
+                ptr::null(),
+                0,
+                ptr::null(),
+            );
+        }
+        Errno::last() != Errno::ENOSYS
+    }
+
+    fn probe_program_types() -> HashMap<ProgramType, Result<bool, BpfInspectError>> {
+        let mut supported = HashMap::new();
+
+        for program_type in ProgramType::iter() {
+            supported.insert(program_type, program_type.probe());
+        }
+
+        supported
+    }
+
+    pub fn features() -> Result<Bpf, DetectError> {
+        if !Self::probe_syscall() {
+            return Err(DetectError::NoBpfSyscall);
+        }
+
+        Ok(Bpf {
+            has_bpf_syscall: true,
+            program_types: Self::probe_program_types(),
+        })
+    }
 }
 
 #[derive(Debug)]
 pub struct Features {
     pub system: Result<System, DetectError>,
+    pub bpf: Result<Bpf, DetectError>,
 }
 
 pub struct DetectOpts {
@@ -258,7 +292,8 @@ pub fn detect(opts: DetectOpts) -> Result<Features, DetectError> {
     }
 
     Ok(Features {
-        system: system_features(),
+        system: System::features(),
+        bpf: Bpf::features(),
     })
 }
 
