@@ -1,6 +1,14 @@
-use libbpf_sys::{libbpf_probe_bpf_prog_type, libbpf_probe_bpf_map_type};
+use libbpf_sys::{
+    _bpf_helper_func_names, libbpf_probe_bpf_helper, libbpf_probe_bpf_map_type,
+    libbpf_probe_bpf_prog_type, __BPF_FUNC_MAX_ID,
+};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
-use std::{ptr, time::Duration};
+use std::{
+    ffi::CStr,
+    fmt::{Debug, Display},
+    ptr,
+    time::Duration,
+};
 use thiserror::Error as ThisError;
 
 #[derive(ThisError, Debug)]
@@ -92,6 +100,16 @@ impl ProgramType {
 
     pub fn probe(&self) -> Result<bool, Error> {
         match unsafe { libbpf_probe_bpf_prog_type((*self).into(), ptr::null()) } {
+            negative if negative < 0 => Err(Error::Code(negative)),
+            0 => Ok(false),
+            1 => Ok(true),
+            positive if positive > 1 => Err(Error::Unknown(positive)),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn probe_helper(&self, helper: BpfHelper) -> Result<bool, Error> {
+        match unsafe { libbpf_probe_bpf_helper((*self).into(), helper.0, ptr::null()) } {
             negative if negative < 0 => Err(Error::Code(negative)),
             0 => Ok(false),
             1 => Ok(true),
@@ -268,11 +286,86 @@ impl Iterator for MapTypeIter {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BpfHelper(u32);
+
+impl BpfHelper {
+    pub fn name(&self) -> &'static str {
+        match usize::try_from(self.0) {
+            Ok(func_idx) => {
+                if func_idx >= unsafe { _bpf_helper_func_names.len() } {
+                    "<unknown>"
+                } else {
+                    let fn_name_ptr = unsafe { _bpf_helper_func_names[func_idx] };
+                    let cstr = unsafe { CStr::from_ptr(fn_name_ptr) };
+                    cstr.to_str().unwrap_or("<utf8err>")
+                }
+            }
+            Err(_) => "<unknown>",
+        }
+    }
+}
+
+impl Display for BpfHelper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name())
+    }
+}
+
+impl Debug for BpfHelper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple(format!("{}<{}>","BpfHelper", &self.name()).as_str())
+            .field(&self.0)
+            .finish()
+    }
+}
+
+pub struct BpfHelperIter(u32);
+
+impl BpfHelperIter {
+    // Skips unspec helper
+    pub fn new() -> Self {
+        Self(1)
+    }
+}
+
+impl Iterator for BpfHelperIter {
+    type Item = BpfHelper;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = self.0;
+        if next >= __BPF_FUNC_MAX_ID {
+            None
+        } else {
+            self.0 = self.0 + 1;
+            Some(BpfHelper(next))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn it_works() {
         let result = 2 + 2;
         assert_eq!(result, 4);
+    }
+
+    #[test]
+    fn bpf_helper_iter() {
+        let count = BpfHelperIter::new()
+            .map(|helper| {
+                let name = helper.name();
+                assert_ne!(name, "<utf8err>");
+                assert_ne!(name, "<unknown>");
+            })
+            .count();
+
+        assert_eq!(count, usize::try_from(__BPF_FUNC_MAX_ID - 1).unwrap());
+
+        let invalid_helper = BpfHelper(__BPF_FUNC_MAX_ID + 1);
+        assert_eq!(invalid_helper.name(), "<unknown>");
     }
 }
