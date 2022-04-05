@@ -1,4 +1,6 @@
-use bpf_inspect_common::{Error as BpfInspectError, MapType, ProgramType};
+use bpf_inspect_common::{
+    BpfHelper, BpfHelperIter, Error as BpfInspectError, MapType, ProgramType,
+};
 use flate2::bufread::GzDecoder;
 use libbpf_sys::bpf_prog_load;
 use std::{
@@ -218,6 +220,7 @@ pub struct Bpf {
     pub has_bpf_syscall: bool,
     pub program_types: HashMap<ProgramType, Result<bool, BpfInspectError>>,
     pub map_types: HashMap<MapType, Result<bool, BpfInspectError>>,
+    pub helpers: HashMap<ProgramType, Result<Vec<BpfHelper>, BpfInspectError>>,
 }
 
 impl Bpf {
@@ -230,6 +233,7 @@ impl Bpf {
             has_bpf_syscall: true,
             program_types: Self::probe_program_types(),
             map_types: Self::probe_map_types(),
+            helpers: Self::probe_helpers(),
         })
     }
 
@@ -257,6 +261,23 @@ impl Bpf {
     fn probe_map_types() -> HashMap<MapType, Result<bool, BpfInspectError>> {
         MapType::iter()
             .map(|map_type| (map_type, map_type.probe()))
+            .collect()
+    }
+
+    fn probe_helpers() -> HashMap<ProgramType, Result<Vec<BpfHelper>, BpfInspectError>> {
+        ProgramType::iter()
+            .map(|program_type| {
+                let helpers = BpfHelperIter::new()
+                    .filter_map(|helper| {
+                        if program_type.probe_helper(helper).unwrap_or(false) {
+                            Some(helper)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                (program_type, Ok(helpers))
+            })
             .collect()
     }
 }
