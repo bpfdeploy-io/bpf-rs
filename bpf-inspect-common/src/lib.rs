@@ -1,10 +1,22 @@
-use num_enum::{TryFromPrimitive, IntoPrimitive};
-use std::time::Duration;
+use libbpf_sys::{bpf_prog_load, libbpf_probe_bpf_prog_type};
+use num_enum::{IntoPrimitive, TryFromPrimitive};
+use std::{ptr, time::Duration};
+use thiserror::Error as ThisError;
+
+#[derive(ThisError, Debug)]
+pub enum Error {
+    #[error("errno: {0}")]
+    Errno(i32),
+    #[error("error code: {0}")]
+    Code(i32),
+    #[error("unknown: {0}")]
+    Unknown(i32),
+}
 
 /// Must abide by enum bpf_prog_type in kernel headers
 #[non_exhaustive]
 #[repr(u32)]
-#[derive(Debug, TryFromPrimitive, IntoPrimitive)]
+#[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ProgramType {
     Unspec = 0,
     SocketFilter,
@@ -78,8 +90,19 @@ impl ProgramType {
         }
     }
 
+    pub fn probe(&self) -> Result<bool, Error> {
+        match unsafe { libbpf_probe_bpf_prog_type((*self).into(), ptr::null()) } {
+            negative if negative < 0 => Err(Error::Code(negative)),
+            0 => Ok(false),
+            1 => Ok(true),
+            positive if positive > 1 => Err(Error::Unknown(positive)),
+            _ => unreachable!(),
+        }
+    }
+
+    /// Skips BPF_PROGRAM_TYPE_UNSPEC since it's an invalid program type
     pub fn iter() -> impl Iterator<Item = ProgramType> {
-        ProgramTypeIter(0)
+        ProgramTypeIter(1)
     }
 }
 
@@ -98,8 +121,6 @@ impl Iterator for ProgramTypeIter {
         }
     }
 }
-
-
 
 #[derive(Debug)]
 #[repr(C)]
