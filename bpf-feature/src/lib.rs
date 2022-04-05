@@ -1,4 +1,4 @@
-use bpf_inspect_common::{Error as BpfInspectError, ProgramType};
+use bpf_inspect_common::{Error as BpfInspectError, MapType, ProgramType};
 use flate2::bufread::GzDecoder;
 use libbpf_sys::bpf_prog_load;
 use std::{
@@ -217,9 +217,22 @@ impl System {
 pub struct Bpf {
     pub has_bpf_syscall: bool,
     pub program_types: HashMap<ProgramType, Result<bool, BpfInspectError>>,
+    pub map_types: HashMap<MapType, Result<bool, BpfInspectError>>,
 }
 
 impl Bpf {
+    pub fn features() -> Result<Bpf, DetectError> {
+        if !Self::probe_syscall() {
+            return Err(DetectError::NoBpfSyscall);
+        }
+
+        Ok(Bpf {
+            has_bpf_syscall: true,
+            program_types: Self::probe_program_types(),
+            map_types: Self::probe_map_types(),
+        })
+    }
+
     fn probe_syscall() -> bool {
         Errno::clear();
         unsafe {
@@ -236,24 +249,15 @@ impl Bpf {
     }
 
     fn probe_program_types() -> HashMap<ProgramType, Result<bool, BpfInspectError>> {
-        let mut supported = HashMap::new();
-
-        for program_type in ProgramType::iter() {
-            supported.insert(program_type, program_type.probe());
-        }
-
-        supported
+        ProgramType::iter()
+            .map(|program_type| (program_type, program_type.probe()))
+            .collect()
     }
 
-    pub fn features() -> Result<Bpf, DetectError> {
-        if !Self::probe_syscall() {
-            return Err(DetectError::NoBpfSyscall);
-        }
-
-        Ok(Bpf {
-            has_bpf_syscall: true,
-            program_types: Self::probe_program_types(),
-        })
+    fn probe_map_types() -> HashMap<MapType, Result<bool, BpfInspectError>> {
+        MapType::iter()
+            .map(|map_type| (map_type, map_type.probe()))
+            .collect()
     }
 }
 
