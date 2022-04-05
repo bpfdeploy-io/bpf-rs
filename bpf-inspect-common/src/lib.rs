@@ -1,4 +1,4 @@
-use libbpf_sys::{bpf_prog_load, libbpf_probe_bpf_prog_type};
+use libbpf_sys::{libbpf_probe_bpf_prog_type, libbpf_probe_bpf_map_type};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::{ptr, time::Duration};
 use thiserror::Error as ThisError;
@@ -159,6 +159,113 @@ pub struct Program {
     pub prog_tags: u64,
     pub run_time_ns: u64,
     pub run_cnt: u64,
+}
+
+/// Must abide by enum bpf_map_type in kernel headers
+#[non_exhaustive]
+#[repr(u32)]
+#[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MapType {
+    Unspec = 0,
+    Hash,
+    Array,
+    ProgArray,
+    PerfEventArray,
+    PerCpuHash,
+    PerCpuArray,
+    StackTrace,
+    CgroupArray,
+    LruHash,
+    LruPerCpuHash,
+    LpmTrie,
+    ArrayOfMaps,
+    HashOfMaps,
+    DevMap,
+    SockMap,
+    CpuMap,
+    XskMap,
+    SockHash,
+    CgroupStorage,
+    ReusePortSockArray,
+    PerCpuCgroupStorage,
+    Queue,
+    Stack,
+    SkStorage,
+    DevMapHash,
+    StructOps,
+    RingBuf,
+    InodeStorage,
+    TaskStorage,
+    BloomFilter,
+}
+
+impl MapType {
+    pub fn name(&self) -> &'static str {
+        match *self {
+            MapType::Unspec => "unspec",
+            MapType::Hash => "hash",
+            MapType::Array => "array",
+            MapType::ProgArray => "prog_array",
+            MapType::PerfEventArray => "perf_event_array",
+            MapType::PerCpuHash => "percpu_hash",
+            MapType::PerCpuArray => "percpu_array",
+            MapType::StackTrace => "stack_trace",
+            MapType::CgroupArray => "cgroup_array",
+            MapType::LruHash => "lru_hash",
+            MapType::LruPerCpuHash => "lru_percpu_hash",
+            MapType::LpmTrie => "lpm_trie",
+            MapType::ArrayOfMaps => "array_of_maps",
+            MapType::HashOfMaps => "hash_of_maps",
+            MapType::DevMap => "devmap",
+            MapType::SockMap => "sockmap",
+            MapType::CpuMap => "cpumap",
+            MapType::XskMap => "xskmap",
+            MapType::SockHash => "sockhash",
+            MapType::CgroupStorage => "cgroup_storage",
+            MapType::ReusePortSockArray => "reuseport_sockarray",
+            MapType::PerCpuCgroupStorage => "percpu_cgroup_storage",
+            MapType::Queue => "queue",
+            MapType::Stack => "stack",
+            MapType::SkStorage => "sk_storage",
+            MapType::DevMapHash => "devmap_hash",
+            MapType::StructOps => "struct_ops",
+            MapType::RingBuf => "ringbuf",
+            MapType::InodeStorage => "inode_storage",
+            MapType::TaskStorage => "task_storage",
+            MapType::BloomFilter => "bloom_filter",
+        }
+    }
+
+    pub fn probe(&self) -> Result<bool, Error> {
+        match unsafe { libbpf_probe_bpf_map_type((*self).into(), ptr::null()) } {
+            negative if negative < 0 => Err(Error::Code(negative)),
+            0 => Ok(false),
+            1 => Ok(true),
+            positive if positive > 1 => Err(Error::Unknown(positive)),
+            _ => unreachable!(),
+        }
+    }
+
+    /// Skips BPF_MAP_TYPE_UNSPEC since it's an invalid map type
+    pub fn iter() -> impl Iterator<Item = MapType> {
+        MapTypeIter(1)
+    }
+}
+
+struct MapTypeIter(u32);
+
+impl Iterator for MapTypeIter {
+    type Item = MapType;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = self.0;
+        if next > MapType::BloomFilter.into() {
+            None
+        } else {
+            self.0 = self.0 + 1;
+            MapType::try_from_primitive(next).ok()
+        }
+    }
 }
 
 #[cfg(test)]
