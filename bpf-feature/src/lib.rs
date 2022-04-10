@@ -164,57 +164,42 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    pub fn probe() -> Result<Runtime, DetectError> {
-        Ok(Runtime {
-            unprivileged_disabled: procfs_value(Path::new(
-                "/proc/sys/kernel/unprivileged_bpf_disabled",
-            )),
-            jit_enable: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_enable")),
-            jit_harden: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_harden")),
-            jit_kallsyms: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_kallsyms")),
-            jit_limit: procfs_value(Path::new("/proc/sys/net/core/bpf_jit_limit")),
-        })
-    }
-}
-
-fn verify_procfs_exists() -> Result<(), DetectError> {
-    match statfs("/proc") {
-        Err(err) => Err(DetectError::Procfs(format!(
-            "error detecting /proc: {}",
-            err
-        ))),
-        Ok(stat) => {
-            if stat.filesystem_type() != PROC_SUPER_MAGIC {
-                Err(DetectError::Procfs(
-                    "/proc f_type not equal to PROC_SUPER_MAGIC".into(),
-                ))
-            } else {
-                Ok(())
+    fn verify_procfs_exists() -> Result<(), DetectError> {
+        match statfs("/proc") {
+            Err(err) => Err(DetectError::Procfs(format!(
+                "error detecting /proc: {}",
+                err
+            ))),
+            Ok(stat) => {
+                if stat.filesystem_type() != PROC_SUPER_MAGIC {
+                    Err(DetectError::Procfs(
+                        "/proc f_type not equal to PROC_SUPER_MAGIC".into(),
+                    ))
+                } else {
+                    Ok(())
+                }
             }
         }
     }
-}
 
-fn procfs_value(path: &Path) -> ProcfsResult {
-    std::fs::read_to_string(path)?
-        .trim()
-        .parse()
-        .or(Err(DetectError::Procfs("invalid parsing".into())))
-}
+    fn procfs_value(path: &Path) -> ProcfsResult {
+        std::fs::read_to_string(path)?
+            .trim()
+            .parse()
+            .or(Err(DetectError::Procfs("invalid parsing".into())))
+    }
 
-#[derive(Debug)]
-pub struct System {
-    pub runtime: Result<Runtime, DetectError>,
-    pub kernel_config: Result<KernelConfig, DetectError>,
-}
+    pub fn features() -> Result<Runtime, DetectError> {
+        Self::verify_procfs_exists()?;
 
-impl System {
-    pub fn features() -> Result<System, DetectError> {
-        verify_procfs_exists()?;
-
-        Ok(System {
-            runtime: Runtime::probe(),
-            kernel_config: probe_kernel_config(),
+        Ok(Runtime {
+            unprivileged_disabled: Self::procfs_value(Path::new(
+                "/proc/sys/kernel/unprivileged_bpf_disabled",
+            )),
+            jit_enable: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_enable")),
+            jit_harden: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_harden")),
+            jit_kallsyms: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_kallsyms")),
+            jit_limit: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_limit")),
         })
     }
 }
@@ -304,7 +289,7 @@ impl Misc {
         }
     }
 
-    fn prog_load(insns: Vec<bpf_insn>) -> bool {
+    fn load_insns(insns: Vec<bpf_insn>) -> bool {
         Errno::clear();
         let fd = unsafe {
             bpf_prog_load(
@@ -330,7 +315,7 @@ impl Misc {
         let max_insns = usize::try_from(BPF_MAXINSNS).unwrap();
         let mut large_insn_prog = vec![mov64_imm(BpfRegister::R0, 1); max_insns + 1];
         large_insn_prog[max_insns] = exit();
-        Ok(Self::prog_load(large_insn_prog))
+        Ok(Self::load_insns(large_insn_prog))
     }
 
     fn probe_bounded_loops() -> Result<bool, DetectError> {
@@ -340,7 +325,7 @@ impl Misc {
             jmp_imm(BpfJmp::JNE, BpfRegister::R0, 0, -2),
             exit(),
         ];
-        Ok(Self::prog_load(insns))
+        Ok(Self::load_insns(insns))
     }
 
     fn probe_isa_v2() -> Result<bool, DetectError> {
@@ -350,7 +335,7 @@ impl Misc {
             mov64_imm(BpfRegister::R0, 1),
             exit(),
         ];
-        Ok(Self::prog_load(insns))
+        Ok(Self::load_insns(insns))
     }
 
     fn probe_isa_v3() -> Result<bool, DetectError> {
@@ -360,13 +345,14 @@ impl Misc {
             mov64_imm(BpfRegister::R0, 1),
             exit(),
         ];
-        Ok(Self::prog_load(insns))
+        Ok(Self::load_insns(insns))
     }
 }
 
 #[derive(Debug)]
 pub struct Features {
-    pub system: Result<System, DetectError>,
+    pub runtime: Result<Runtime, DetectError>,
+    pub kernel_config: Result<KernelConfig, DetectError>,
     pub bpf: Result<Bpf, DetectError>,
     pub misc: Misc,
 }
@@ -400,7 +386,8 @@ pub fn detect(opts: DetectOpts) -> Result<Features, DetectError> {
     }
 
     Ok(Features {
-        system: System::features(),
+        runtime: Runtime::features(),
+        kernel_config: probe_kernel_config(),
         bpf: Bpf::features(),
         misc: Misc::features(),
     })
