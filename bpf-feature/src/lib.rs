@@ -30,8 +30,8 @@ pub enum DetectError {
     CapAccess,
     #[error("missing CAP_SYS_ADMIN for full feature probe")]
     CapSysAdmin,
-    #[error("{0}")]
-    Procfs(String), // TODO: should be a further nested error type rather thanString?
+    #[error("procfs at /proc was not detected")]
+    ProcfsNonExistent,
     #[error("{0}")]
     KernelConfig(&'static str),
     #[error("no bpf syscall on system")]
@@ -165,7 +165,15 @@ impl KernelConfig {
     }
 }
 
-type ProcfsResult = Result<usize, DetectError>;
+#[derive(ThisError, Debug)]
+pub enum ProcfsError {
+    #[error("std::num::ParseIntError: {0}")]
+    ParseIntError(#[from] std::num::ParseIntError),
+    #[error("std::io::Error: {0}")]
+    IO(#[from] std::io::Error),
+}
+
+type ProcfsResult = Result<usize, ProcfsError>;
 
 #[derive(Debug)]
 pub struct Runtime {
@@ -181,27 +189,22 @@ impl Runtime {
         Self::verify_procfs_exists()?;
 
         Ok(Runtime {
-            unprivileged_disabled: Self::procfs_value(Path::new(
+            unprivileged_disabled: Self::procfs_read(Path::new(
                 "/proc/sys/kernel/unprivileged_bpf_disabled",
             )),
-            jit_enable: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_enable")),
-            jit_harden: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_harden")),
-            jit_kallsyms: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_kallsyms")),
-            jit_limit: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_limit")),
+            jit_enable: Self::procfs_read(Path::new("/proc/sys/net/core/bpf_jit_enable")),
+            jit_harden: Self::procfs_read(Path::new("/proc/sys/net/core/bpf_jit_harden")),
+            jit_kallsyms: Self::procfs_read(Path::new("/proc/sys/net/core/bpf_jit_kallsyms")),
+            jit_limit: Self::procfs_read(Path::new("/proc/sys/net/core/bpf_jit_limit")),
         })
     }
 
     fn verify_procfs_exists() -> Result<(), DetectError> {
         match statfs("/proc") {
-            Err(err) => Err(DetectError::Procfs(format!(
-                "error detecting /proc: {}",
-                err
-            ))),
+            Err(err) => Err(DetectError::ProcfsNonExistent),
             Ok(stat) => {
                 if stat.filesystem_type() != PROC_SUPER_MAGIC {
-                    Err(DetectError::Procfs(
-                        "/proc f_type not equal to PROC_SUPER_MAGIC".into(),
-                    ))
+                    Err(DetectError::ProcfsNonExistent)
                 } else {
                     Ok(())
                 }
@@ -209,11 +212,8 @@ impl Runtime {
         }
     }
 
-    fn procfs_value(path: &Path) -> ProcfsResult {
-        std::fs::read_to_string(path)?
-            .trim()
-            .parse()
-            .or(Err(DetectError::Procfs("invalid parsing".into())))
+    fn procfs_read(path: &Path) -> ProcfsResult {
+        Ok(std::fs::read_to_string(path)?.trim().parse()?)
     }
 }
 
