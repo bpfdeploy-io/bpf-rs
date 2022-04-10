@@ -6,6 +6,7 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::{
     ffi::CStr,
     fmt::{Debug, Display},
+    os::raw,
     ptr,
     time::Duration,
 };
@@ -142,7 +143,7 @@ impl Iterator for ProgramTypeIter {
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct Program {
+pub struct ProgramInfo {
     pub name: String,
     pub ty: ProgramType,
     pub tag: [u8; 8],
@@ -177,6 +178,25 @@ pub struct Program {
     pub prog_tags: u64,
     pub run_time_ns: u64,
     pub run_cnt: u64,
+}
+
+#[non_exhaustive]
+pub enum ProgramLicense {
+    GPL,
+}
+
+impl ProgramLicense {
+    pub fn as_str_with_nul(&self) -> &'static str {
+        match *self {
+            ProgramLicense::GPL => "GPL\0",
+        }
+    }
+
+    pub fn as_ptr(&self) -> *const raw::c_char {
+        CStr::from_bytes_with_nul(self.as_str_with_nul().as_bytes())
+            .unwrap()
+            .as_ptr()
+    }
 }
 
 /// Must abide by enum bpf_map_type in kernel headers
@@ -314,7 +334,7 @@ impl Display for BpfHelper {
 
 impl Debug for BpfHelper {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple(format!("{}<{}>","BpfHelper", &self.name()).as_str())
+        f.debug_tuple(format!("{}<{}>", "BpfHelper", &self.name()).as_str())
             .field(&self.0)
             .finish()
     }
@@ -343,6 +363,54 @@ impl Iterator for BpfHelperIter {
     }
 }
 
+pub mod bpf_asm {
+    use libbpf_sys::{
+        bpf_insn, BPF_JLT, BPF_JNE, BPF_REG_0, BPF_REG_1, BPF_SUB, _BPF_ALU64_IMM, _BPF_EXIT_INSN,
+        _BPF_JMP32_IMM, _BPF_JMP_IMM, _BPF_MOV64_IMM,
+    };
+    use num_enum::{IntoPrimitive, TryFromPrimitive};
+
+    #[repr(u8)]
+    #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
+    pub enum BpfRegister {
+        R0 = BPF_REG_0 as u8,
+        R1 = BPF_REG_1 as u8,
+    }
+
+    #[repr(u8)]
+    #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
+    pub enum BpfOp {
+        Sub = BPF_SUB as u8,
+    }
+
+    #[repr(u8)]
+    #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
+    pub enum BpfJmp {
+        JNE = BPF_JNE as u8,
+        JLT = BPF_JLT as u8,
+    }
+
+    pub fn mov64_imm(reg: BpfRegister, imm: i32) -> bpf_insn {
+        unsafe { _BPF_MOV64_IMM(reg.into(), imm) }
+    }
+
+    pub fn alu64_imm(op: BpfOp, reg: BpfRegister, imm: i32) -> bpf_insn {
+        unsafe { _BPF_ALU64_IMM(op.into(), reg.into(), imm) }
+    }
+
+    pub fn jmp_imm(jmp: BpfJmp, reg: BpfRegister, imm: i32, off: i16) -> bpf_insn {
+        unsafe { _BPF_JMP_IMM(jmp.into(), reg.into(), imm, off) }
+    }
+
+    pub fn jmp32_imm(jmp: BpfJmp, reg: BpfRegister, imm: i32, off: i16) -> bpf_insn {
+        unsafe { _BPF_JMP32_IMM(jmp.into(), reg.into(), imm, off) }
+    }
+
+    pub fn exit() -> bpf_insn {
+        unsafe { _BPF_EXIT_INSN() }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -367,5 +435,10 @@ mod tests {
 
         let invalid_helper = BpfHelper(__BPF_FUNC_MAX_ID + 1);
         assert_eq!(invalid_helper.name(), "<unknown>");
+    }
+
+    #[test]
+    fn program_license_ptr() {
+        assert!(ProgramLicense::GPL.as_ptr().is_null() == false);
     }
 }
