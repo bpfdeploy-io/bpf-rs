@@ -1,8 +1,9 @@
 use bpf_inspect_common::{
-    BpfHelper, BpfHelperIter, Error as BpfInspectError, MapType, ProgramType,
+    bpf_asm::{alu64_imm, exit, jmp32_imm, jmp_imm, mov64_imm, BpfJmp, BpfOp, BpfRegister},
+    BpfHelper, BpfHelperIter, Error as BpfInspectError, MapType, ProgramLicense, ProgramType,
 };
 use flate2::bufread::GzDecoder;
-use libbpf_sys::bpf_prog_load;
+use libbpf_sys::{bpf_insn, bpf_prog_load, BPF_MAXINSNS};
 use std::{
     collections::HashMap,
     fs::File,
@@ -14,11 +15,12 @@ use thiserror::Error as ThisError;
 // TODO: if this is the only use of nix
 // then consider just using libc
 use nix::{
-    errno::Errno,
+    errno::{errno, Errno},
     sys::{
         statfs::{statfs, PROC_SUPER_MAGIC},
         utsname,
     },
+    unistd,
 };
 
 // TODO: consider splitting up so that library clients don't need to match against all of them?
@@ -34,6 +36,8 @@ pub enum DetectError {
     KernelConfig(&'static str),
     #[error("no bpf syscall on system")]
     NoBpfSyscall,
+    #[error("failure to load bpf program")]
+    BpfProgLoad,
     #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
 }
@@ -283,9 +287,88 @@ impl Bpf {
 }
 
 #[derive(Debug)]
+pub struct Misc {
+    pub large_insn_limit: Result<bool, DetectError>,
+    pub bounded_loops: Result<bool, DetectError>,
+    pub isa_v2_ext: Result<bool, DetectError>,
+    pub isa_v3_ext: Result<bool, DetectError>,
+}
+
+impl Misc {
+    pub fn features() -> Misc {
+        Misc {
+            large_insn_limit: Self::probe_large_insn_limit(),
+            bounded_loops: Self::probe_bounded_loops(),
+            isa_v2_ext: Self::probe_isa_v2(),
+            isa_v3_ext: Self::probe_isa_v3(),
+        }
+    }
+
+    fn prog_load(insns: Vec<bpf_insn>) -> bool {
+        Errno::clear();
+        let fd = unsafe {
+            bpf_prog_load(
+                ProgramType::SocketFilter.into(),
+                ptr::null(),
+                ProgramLicense::GPL.as_ptr(),
+                insns.as_ptr(),
+                u64::try_from(insns.len()).unwrap_or(0u64),
+                ptr::null(),
+            )
+        };
+
+        let success = fd >= 0 || errno() == 0;
+
+        if fd >= 0 {
+            let _ = unistd::close(fd);
+        }
+
+        success
+    }
+
+    fn probe_large_insn_limit() -> Result<bool, DetectError> {
+        let max_insns = usize::try_from(BPF_MAXINSNS).unwrap();
+        let mut large_insn_prog = vec![mov64_imm(BpfRegister::R0, 1); max_insns + 1];
+        large_insn_prog[max_insns] = exit();
+        Ok(Self::prog_load(large_insn_prog))
+    }
+
+    fn probe_bounded_loops() -> Result<bool, DetectError> {
+        let insns = vec![
+            mov64_imm(BpfRegister::R0, 10),
+            alu64_imm(BpfOp::Sub, BpfRegister::R0, 1),
+            jmp_imm(BpfJmp::JNE, BpfRegister::R0, 0, -2),
+            exit(),
+        ];
+        Ok(Self::prog_load(insns))
+    }
+
+    fn probe_isa_v2() -> Result<bool, DetectError> {
+        let insns = vec![
+            mov64_imm(BpfRegister::R0, 0),
+            jmp_imm(BpfJmp::JLT, BpfRegister::R0, 0, 1),
+            mov64_imm(BpfRegister::R0, 1),
+            exit(),
+        ];
+        Ok(Self::prog_load(insns))
+    }
+
+    fn probe_isa_v3() -> Result<bool, DetectError> {
+        let insns = vec![
+            mov64_imm(BpfRegister::R0, 0),
+            jmp32_imm(BpfJmp::JLT, BpfRegister::R0, 0, 1),
+            mov64_imm(BpfRegister::R0, 1),
+            exit(),
+        ];
+        Ok(Self::prog_load(insns))
+    }
+}
+
+#[derive(Debug)]
 pub struct Features {
     pub system: Result<System, DetectError>,
     pub bpf: Result<Bpf, DetectError>,
+    pub misc: Misc,
 }
 
 pub struct DetectOpts {
@@ -319,6 +402,7 @@ pub fn detect(opts: DetectOpts) -> Result<Features, DetectError> {
     Ok(Features {
         system: System::features(),
         bpf: Bpf::features(),
+        misc: Misc::features(),
     })
 }
 
