@@ -286,10 +286,10 @@ impl Bpf {
 
 #[derive(Debug)]
 pub struct Misc {
-    pub large_insn_limit: Result<bool, DetectError>,
-    pub bounded_loops: Result<bool, DetectError>,
-    pub isa_v2_ext: Result<bool, DetectError>,
-    pub isa_v3_ext: Result<bool, DetectError>,
+    pub large_insn_limit: bool,
+    pub bounded_loops: bool,
+    pub isa_v2_ext: bool,
+    pub isa_v3_ext: bool,
 }
 
 impl Misc {
@@ -324,41 +324,41 @@ impl Misc {
         success
     }
 
-    fn probe_large_insn_limit() -> Result<bool, DetectError> {
+    fn probe_large_insn_limit() -> bool {
         let max_insns = usize::try_from(BPF_MAXINSNS).unwrap();
         let mut large_insn_prog = vec![mov64_imm(BpfRegister::R0, 1); max_insns + 1];
         large_insn_prog[max_insns] = exit();
-        Ok(Self::load_insns(large_insn_prog))
+        Self::load_insns(large_insn_prog)
     }
 
-    fn probe_bounded_loops() -> Result<bool, DetectError> {
+    fn probe_bounded_loops() -> bool {
         let insns = vec![
             mov64_imm(BpfRegister::R0, 10),
             alu64_imm(BpfOp::Sub, BpfRegister::R0, 1),
             jmp_imm(BpfJmp::JNE, BpfRegister::R0, 0, -2),
             exit(),
         ];
-        Ok(Self::load_insns(insns))
+        Self::load_insns(insns)
     }
 
-    fn probe_isa_v2() -> Result<bool, DetectError> {
+    fn probe_isa_v2() -> bool {
         let insns = vec![
             mov64_imm(BpfRegister::R0, 0),
             jmp_imm(BpfJmp::JLT, BpfRegister::R0, 0, 1),
             mov64_imm(BpfRegister::R0, 1),
             exit(),
         ];
-        Ok(Self::load_insns(insns))
+        Self::load_insns(insns)
     }
 
-    fn probe_isa_v3() -> Result<bool, DetectError> {
+    fn probe_isa_v3() -> bool {
         let insns = vec![
             mov64_imm(BpfRegister::R0, 0),
             jmp32_imm(BpfJmp::JLT, BpfRegister::R0, 0, 1),
             mov64_imm(BpfRegister::R0, 1),
             exit(),
         ];
-        Ok(Self::load_insns(insns))
+        Self::load_insns(insns)
     }
 }
 
