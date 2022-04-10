@@ -51,7 +51,7 @@ pub enum ConfigValue {
     Unknown,
 }
 
-pub type KernelConfig = HashMap<&'static str, ConfigValue>;
+pub type KernelConfigValues = HashMap<&'static str, ConfigValue>;
 
 const KERNEL_CONFIG_KEYS: [&'static str; 34] = [
     "CONFIG_BPF",
@@ -90,66 +90,79 @@ const KERNEL_CONFIG_KEYS: [&'static str; 34] = [
     "CONFIG_HZ",
 ];
 
-fn probe_kernel_config() -> Result<KernelConfig, DetectError> {
-    let utsn = utsname::uname();
+#[derive(Debug)]
+pub struct KernelConfig {
+    pub values: KernelConfigValues,
+}
 
-    let config_reader: Box<dyn BufRead> =
-        match File::open(format!("/boot/config-{}", utsn.release())) {
-            Err(_) => {
-                let compressed_config = File::open("/proc/config.gz")?;
-                let decoder = GzDecoder::new(BufReader::new(compressed_config));
-                Box::new(BufReader::new(decoder))
-            }
-            Ok(f) => Box::new(BufReader::new(f)),
-        };
-
-    let mut lines_iter = config_reader.lines();
-    let _ = lines_iter
-        .next()
-        .transpose()?
-        .ok_or(DetectError::KernelConfig("could not read config"))?;
-    let line = lines_iter
-        .next()
-        .transpose()?
-        .ok_or(DetectError::KernelConfig("could not read config"))?;
-
-    if !line.starts_with("# Automatically generated file; DO NOT EDIT.") {
-        return Err(DetectError::KernelConfig(
-            "kernel config written with unknown data",
-        ));
+impl KernelConfig {
+    pub fn features() -> Result<KernelConfig, DetectError> {
+        return Ok(KernelConfig {
+            values: Self::probe_kernel_config()?,
+        });
     }
 
-    let mut options = HashMap::from(KERNEL_CONFIG_KEYS.map(|key| (key, ConfigValue::Unknown)));
+    fn probe_kernel_config() -> Result<KernelConfigValues, DetectError> {
+        let utsn = utsname::uname();
 
-    for line_item in lines_iter {
-        let line = line_item?;
-        if !line.starts_with("CONFIG_") {
-            continue;
+        let config_reader: Box<dyn BufRead> =
+            match File::open(format!("/boot/config-{}", utsn.release())) {
+                Err(_) => {
+                    let compressed_config = File::open("/proc/config.gz")?;
+                    let decoder = GzDecoder::new(BufReader::new(compressed_config));
+                    Box::new(BufReader::new(decoder))
+                }
+                Ok(f) => Box::new(BufReader::new(f)),
+            };
+
+        let mut lines_iter = config_reader.lines();
+        let _ = lines_iter
+            .next()
+            .transpose()?
+            .ok_or(DetectError::KernelConfig("could not read config"))?;
+        let line = lines_iter
+            .next()
+            .transpose()?
+            .ok_or(DetectError::KernelConfig("could not read config"))?;
+
+        if !line.starts_with("# Automatically generated file; DO NOT EDIT.") {
+            return Err(DetectError::KernelConfig(
+                "kernel config written with unknown data",
+            ));
         }
 
-        let pieces: Vec<_> = line.split("=").collect();
-        if pieces.len() < 2 {
-            continue;
-        }
+        let mut options = HashMap::from(KERNEL_CONFIG_KEYS.map(|key| (key, ConfigValue::Unknown)));
 
-        for key in KERNEL_CONFIG_KEYS {
-            if key != pieces[0] {
+        for line_item in lines_iter {
+            let line = line_item?;
+            if !line.starts_with("CONFIG_") {
                 continue;
             }
 
-            options.insert(
-                key,
-                match pieces[1] {
-                    "y" => ConfigValue::Y,
-                    "m" => ConfigValue::M,
-                    "n" => ConfigValue::N,
-                    _ => ConfigValue::Other(pieces[1].to_string()),
-                },
-            );
-        }
-    }
+            let pieces: Vec<_> = line.split("=").collect();
+            if pieces.len() < 2 {
+                continue;
+            }
 
-    return Ok(options);
+            for key in KERNEL_CONFIG_KEYS {
+                if key != pieces[0] {
+                    continue;
+                }
+
+                options.insert(
+                    key,
+                    match pieces[1] {
+                        "y" => ConfigValue::Y,
+                        "m" => ConfigValue::M,
+                        "n" => ConfigValue::N,
+                        _ => ConfigValue::Other(pieces[1].to_string()),
+                    },
+                );
+            }
+        }
+
+        return Ok(options);
+    }
 }
 
 type ProcfsResult = Result<usize, DetectError>;
@@ -164,6 +177,20 @@ pub struct Runtime {
 }
 
 impl Runtime {
+    pub fn features() -> Result<Runtime, DetectError> {
+        Self::verify_procfs_exists()?;
+
+        Ok(Runtime {
+            unprivileged_disabled: Self::procfs_value(Path::new(
+                "/proc/sys/kernel/unprivileged_bpf_disabled",
+            )),
+            jit_enable: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_enable")),
+            jit_harden: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_harden")),
+            jit_kallsyms: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_kallsyms")),
+            jit_limit: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_limit")),
+        })
+    }
+
     fn verify_procfs_exists() -> Result<(), DetectError> {
         match statfs("/proc") {
             Err(err) => Err(DetectError::Procfs(format!(
@@ -187,20 +214,6 @@ impl Runtime {
             .trim()
             .parse()
             .or(Err(DetectError::Procfs("invalid parsing".into())))
-    }
-
-    pub fn features() -> Result<Runtime, DetectError> {
-        Self::verify_procfs_exists()?;
-
-        Ok(Runtime {
-            unprivileged_disabled: Self::procfs_value(Path::new(
-                "/proc/sys/kernel/unprivileged_bpf_disabled",
-            )),
-            jit_enable: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_enable")),
-            jit_harden: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_harden")),
-            jit_kallsyms: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_kallsyms")),
-            jit_limit: Self::procfs_value(Path::new("/proc/sys/net/core/bpf_jit_limit")),
-        })
     }
 }
 
@@ -387,7 +400,7 @@ pub fn detect(opts: DetectOpts) -> Result<Features, DetectError> {
 
     Ok(Features {
         runtime: Runtime::features(),
-        kernel_config: probe_kernel_config(),
+        kernel_config: KernelConfig::features(),
         bpf: Bpf::features(),
         misc: Misc::features(),
     })
