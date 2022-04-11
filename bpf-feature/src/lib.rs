@@ -175,7 +175,7 @@ impl KernelConfig {
 }
 
 #[derive(ThisError, Debug)]
-pub enum ProcfsError {
+pub enum RuntimeError {
     #[error("procfs at /proc was not detected")]
     ProcfsNonExistent,
     #[error("std::num::ParseIntError: {0}")]
@@ -184,7 +184,7 @@ pub enum ProcfsError {
     IO(#[from] std::io::Error),
 }
 
-type ProcfsResult = Result<usize, ProcfsError>;
+type ProcfsResult = Result<usize, RuntimeError>;
 
 #[derive(Debug)]
 pub struct Runtime {
@@ -196,7 +196,7 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    pub fn features() -> Result<Runtime, ProcfsError> {
+    pub fn features() -> Result<Runtime, RuntimeError> {
         Self::verify_procfs_exists()?;
 
         Ok(Runtime {
@@ -210,12 +210,12 @@ impl Runtime {
         })
     }
 
-    fn verify_procfs_exists() -> Result<(), ProcfsError> {
+    fn verify_procfs_exists() -> Result<(), RuntimeError> {
         match statfs("/proc") {
-            Err(_) => Err(ProcfsError::ProcfsNonExistent),
+            Err(_) => Err(RuntimeError::ProcfsNonExistent),
             Ok(stat) => {
                 if stat.filesystem_type() != PROC_SUPER_MAGIC {
-                    Err(ProcfsError::ProcfsNonExistent)
+                    Err(RuntimeError::ProcfsNonExistent)
                 } else {
                     Ok(())
                 }
@@ -375,7 +375,7 @@ impl Misc {
 
 #[derive(Debug)]
 pub struct Features {
-    pub runtime: Result<Runtime, ProcfsError>,
+    pub runtime: Result<Runtime, RuntimeError>,
     pub kernel_config: Result<KernelConfig, KernelConfigError>,
     pub bpf: Result<Bpf, DetectError>,
     pub misc: Misc,

@@ -1,4 +1,4 @@
-use bpf_feature::{detect, DetectError, DetectOpts, ProcfsError};
+use bpf_feature::{detect, DetectError, DetectOpts, RuntimeError};
 
 fn main() {
     println!("Scanning system configuration...");
@@ -48,6 +48,27 @@ fn main() {
                 },
                 Err(_) => eprintln!("Unable to retrieve JIT hardening status"),
             }
+
+            match runtime.jit_kallsyms {
+                Ok(prop) => match prop {
+                    0 => println!("JIT compiler kallsyms exports are disabled"),
+                    1 => println!("JIT compiler kallsyms exports are enabled for root"),
+                    unknown => {
+                        println!("JIT kallsyms exports status has unknown value: {}", unknown)
+                    }
+                },
+                Err(_) => eprintln!("Unable to retrieve JIT kallsyms export status"),
+            }
+
+            match runtime.jit_limit {
+                Ok(prop) => println!("Global memory limit for JIT compiler for unprivileged users is {} bytes", prop),
+                Err(_) => eprintln!("Unable to retrieve global memory limit for JIT compiler for unprivileged users"),
+            }
         }
+    }
+
+    match features.kernel_config {
+        Ok(_) => todo!(),
+        Err(err) => eprintln!("skipping kernel config, {}", err)
     }
 }
