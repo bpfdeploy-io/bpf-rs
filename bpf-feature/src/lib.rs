@@ -30,15 +30,15 @@ pub enum DetectError {
     CapAccess,
     #[error("missing CAP_SYS_ADMIN for full feature probe")]
     CapSysAdmin,
-    #[error("procfs at /proc was not detected")]
-    ProcfsNonExistent,
+
     #[error("{0}")]
     KernelConfig(&'static str),
     #[error("no bpf syscall on system")]
     NoBpfSyscall,
     #[error("failure to load bpf program")]
     BpfProgLoad,
-    #[error("IO error: {0}")]
+
+    #[error("std::io::Error: {0}")]
     IO(#[from] std::io::Error),
 }
 
@@ -167,6 +167,8 @@ impl KernelConfig {
 
 #[derive(ThisError, Debug)]
 pub enum ProcfsError {
+    #[error("procfs at /proc was not detected")]
+    ProcfsNonExistent,
     #[error("std::num::ParseIntError: {0}")]
     ParseIntError(#[from] std::num::ParseIntError),
     #[error("std::io::Error: {0}")]
@@ -185,7 +187,7 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    pub fn features() -> Result<Runtime, DetectError> {
+    pub fn features() -> Result<Runtime, ProcfsError> {
         Self::verify_procfs_exists()?;
 
         Ok(Runtime {
@@ -199,12 +201,12 @@ impl Runtime {
         })
     }
 
-    fn verify_procfs_exists() -> Result<(), DetectError> {
+    fn verify_procfs_exists() -> Result<(), ProcfsError> {
         match statfs("/proc") {
-            Err(err) => Err(DetectError::ProcfsNonExistent),
+            Err(_) => Err(ProcfsError::ProcfsNonExistent),
             Ok(stat) => {
                 if stat.filesystem_type() != PROC_SUPER_MAGIC {
-                    Err(DetectError::ProcfsNonExistent)
+                    Err(ProcfsError::ProcfsNonExistent)
                 } else {
                     Ok(())
                 }
@@ -364,7 +366,7 @@ impl Misc {
 
 #[derive(Debug)]
 pub struct Features {
-    pub runtime: Result<Runtime, DetectError>,
+    pub runtime: Result<Runtime, ProcfsError>,
     pub kernel_config: Result<KernelConfig, DetectError>,
     pub bpf: Result<Bpf, DetectError>,
     pub misc: Misc,
