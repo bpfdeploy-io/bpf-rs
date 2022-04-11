@@ -31,8 +31,6 @@ pub enum DetectError {
     #[error("missing CAP_SYS_ADMIN for full feature probe")]
     CapSysAdmin,
 
-    #[error("{0}")]
-    KernelConfig(&'static str),
     #[error("no bpf syscall on system")]
     NoBpfSyscall,
     #[error("failure to load bpf program")]
@@ -40,6 +38,16 @@ pub enum DetectError {
 
     #[error("std::io::Error: {0}")]
     IO(#[from] std::io::Error),
+}
+
+#[derive(ThisError, Debug)]
+pub enum KernelConfigError {
+    #[error("can't open file")]
+    NotFound,
+    #[error("file data format unknown")]
+    ContentsUnknown,
+    #[error("can't read from file")]
+    ReadFail,
 }
 
 #[derive(Debug)]
@@ -96,19 +104,20 @@ pub struct KernelConfig {
 }
 
 impl KernelConfig {
-    pub fn features() -> Result<KernelConfig, DetectError> {
+    pub fn features() -> Result<KernelConfig, KernelConfigError> {
         return Ok(KernelConfig {
             values: Self::probe_kernel_config()?,
         });
     }
 
-    fn probe_kernel_config() -> Result<KernelConfigValues, DetectError> {
+    fn probe_kernel_config() -> Result<KernelConfigValues, KernelConfigError> {
         let utsn = utsname::uname();
 
         let config_reader: Box<dyn BufRead> =
             match File::open(format!("/boot/config-{}", utsn.release())) {
                 Err(_) => {
-                    let compressed_config = File::open("/proc/config.gz")?;
+                    let compressed_config =
+                        File::open("/proc/config.gz").map_err(|err| KernelConfigError::NotFound)?;
                     let decoder = GzDecoder::new(BufReader::new(compressed_config));
                     Box::new(BufReader::new(decoder))
                 }
@@ -118,23 +127,23 @@ impl KernelConfig {
         let mut lines_iter = config_reader.lines();
         let _ = lines_iter
             .next()
-            .transpose()?
-            .ok_or(DetectError::KernelConfig("could not read config"))?;
+            .transpose()
+            .map_err(|_| KernelConfigError::ReadFail)?
+            .ok_or(KernelConfigError::ReadFail)?;
         let line = lines_iter
             .next()
-            .transpose()?
-            .ok_or(DetectError::KernelConfig("could not read config"))?;
+            .transpose()
+            .map_err(|_| KernelConfigError::ReadFail)?
+            .ok_or(KernelConfigError::ReadFail)?;
 
         if !line.starts_with("# Automatically generated file; DO NOT EDIT.") {
-            return Err(DetectError::KernelConfig(
-                "kernel config written with unknown data",
-            ));
+            return Err(KernelConfigError::ContentsUnknown);
         }
 
         let mut options = HashMap::from(KERNEL_CONFIG_KEYS.map(|key| (key, ConfigValue::Unknown)));
 
         for line_item in lines_iter {
-            let line = line_item?;
+            let line = line_item.map_err(|_| KernelConfigError::ReadFail)?;
             if !line.starts_with("CONFIG_") {
                 continue;
             }
@@ -367,7 +376,7 @@ impl Misc {
 #[derive(Debug)]
 pub struct Features {
     pub runtime: Result<Runtime, ProcfsError>,
-    pub kernel_config: Result<KernelConfig, DetectError>,
+    pub kernel_config: Result<KernelConfig, KernelConfigError>,
     pub bpf: Result<Bpf, DetectError>,
     pub misc: Misc,
 }
