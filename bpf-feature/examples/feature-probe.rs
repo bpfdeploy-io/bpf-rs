@@ -1,4 +1,5 @@
 use bpf_feature::{detect, DetectOpts, KernelConfig, KERNEL_CONFIG_KEYS};
+use bpf_inspect_common::ProgramType;
 
 fn main() {
     println!("Scanning system configuration...");
@@ -75,5 +76,21 @@ fn main() {
             };
         }),
         Err(err) => eprintln!("skipping kernel config, {}", err),
+    }
+
+    println!("\nScanning system call availability...");
+    match features.bpf {
+        Ok(bpf) => {
+            println!("bpf() syscall is available");
+            println!("\nScanning eBPF program types...");
+
+            ProgramType::iter().for_each(|ref program_type| {
+                match bpf.program_types.get(program_type) {
+                    Some(Ok(true)) => println!("eBPF program_type {} is available", program_type),
+                    _ => eprintln!("eBPF program_type {} is NOT available", program_type),
+                };
+            });
+        }
+        Err(_) => eprintln!("bpf() syscall is NOT available"),
     }
 }
