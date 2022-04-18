@@ -125,6 +125,12 @@ impl ProgramType {
     }
 }
 
+impl Display for ProgramType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name())
+    }
+}
+
 struct ProgramTypeIter(u32);
 
 impl Iterator for ProgramTypeIter {
