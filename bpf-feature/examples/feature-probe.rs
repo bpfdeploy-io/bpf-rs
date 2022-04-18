@@ -1,4 +1,4 @@
-use bpf_feature::{detect, DetectError, DetectOpts, RuntimeError};
+use bpf_feature::{detect, DetectOpts, KernelConfig, KERNEL_CONFIG_KEYS};
 
 fn main() {
     println!("Scanning system configuration...");
@@ -68,7 +68,12 @@ fn main() {
     }
 
     match features.kernel_config {
-        Ok(_) => todo!(),
-        Err(err) => eprintln!("skipping kernel config, {}", err)
+        Ok(KernelConfig { values }) => KERNEL_CONFIG_KEYS.iter().for_each(|&key| {
+            match values.get(key) {
+                Some(value) => println!("{} is set {}", key, value),
+                None => println!("{} is not set", key),
+            };
+        }),
+        Err(err) => eprintln!("skipping kernel config, {}", err),
     }
 }

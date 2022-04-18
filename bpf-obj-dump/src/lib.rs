@@ -1,4 +1,4 @@
-use bpf_inspect_common::{Program as ProgramInner, ProgramType};
+use bpf_inspect_common::{ProgramInfo as ProgramInner, ProgramType};
 use errno::{errno, Errno};
 use libbpf_sys::bpf_prog_info;
 use std::{ffi::c_void, num::TryFromIntError, os::unix::prelude::*, time::Duration};
@@ -28,7 +28,7 @@ impl ProgramInfo {
         let name = String::from_utf8(c).unwrap_or("(?)".into());
         let ty = match ProgramType::try_from(raw.type_) {
             Ok(ty) => ty,
-            Err(_) => ProgramType::Unknown,
+            Err(_) => todo!(),
         };
 
         ProgramInfo {

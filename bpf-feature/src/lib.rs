@@ -6,6 +6,7 @@ use flate2::bufread::GzDecoder;
 use libbpf_sys::{bpf_insn, bpf_prog_load, BPF_MAXINSNS};
 use std::{
     collections::HashMap,
+    fmt::Display,
     fs::File,
     io::{BufRead, BufReader},
     path::Path,
@@ -56,12 +57,22 @@ pub enum ConfigValue {
     N,
     M,
     Other(String),
-    Unknown,
+}
+
+impl Display for ConfigValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConfigValue::Y => write!(f, "y"),
+            ConfigValue::N => write!(f, "n"),
+            ConfigValue::M => write!(f, "m"),
+            ConfigValue::Other(value) => write!(f, "{}", value),
+        }
+    }
 }
 
 pub type KernelConfigValues = HashMap<&'static str, ConfigValue>;
 
-const KERNEL_CONFIG_KEYS: [&'static str; 34] = [
+pub const KERNEL_CONFIG_KEYS: [&'static str; 35] = [
     "CONFIG_BPF",
     "CONFIG_BPF_SYSCALL",
     "CONFIG_HAVE_EBPF_JIT",
@@ -84,6 +95,7 @@ const KERNEL_CONFIG_KEYS: [&'static str; 34] = [
     "CONFIG_XDP_SOCKETS",
     "CONFIG_LWTUNNEL_BPF",
     "CONFIG_NET_ACT_BPF",
+    "CONFIG_NET_CLS_BPF",
     "CONFIG_NET_CLS_ACT",
     "CONFIG_NET_SCH_INGRESS",
     "CONFIG_XFRM",
@@ -117,7 +129,7 @@ impl KernelConfig {
             match File::open(format!("/boot/config-{}", utsn.release())) {
                 Err(_) => {
                     let compressed_config =
-                        File::open("/proc/config.gz").map_err(|err| KernelConfigError::NotFound)?;
+                        File::open("/proc/config.gz").map_err(|_| KernelConfigError::NotFound)?;
                     let decoder = GzDecoder::new(BufReader::new(compressed_config));
                     Box::new(BufReader::new(decoder))
                 }
@@ -140,7 +152,7 @@ impl KernelConfig {
             return Err(KernelConfigError::ContentsUnknown);
         }
 
-        let mut options = HashMap::from(KERNEL_CONFIG_KEYS.map(|key| (key, ConfigValue::Unknown)));
+        let mut options = HashMap::new();
 
         for line_item in lines_iter {
             let line = line_item.map_err(|_| KernelConfigError::ReadFail)?;
