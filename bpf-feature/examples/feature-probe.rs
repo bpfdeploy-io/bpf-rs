@@ -1,5 +1,5 @@
 use bpf_feature::{detect, DetectOpts, KernelConfig, KERNEL_CONFIG_KEYS};
-use bpf_inspect_common::ProgramType;
+use bpf_inspect_common::{ProgramType, MapType};
 
 fn main() {
     println!("Scanning system configuration...");
@@ -89,6 +89,14 @@ fn main() {
                     Some(Ok(true)) => println!("eBPF program_type {} is available", program_type),
                     _ => eprintln!("eBPF program_type {} is NOT available", program_type),
                 };
+            });
+
+            println!("\nScanning eBPF map types...");
+            MapType::iter().for_each(|ref map_type| {
+                match bpf.map_types.get(map_type) {
+                    Some(Ok(true)) => println!("eBPF map_type {} is available", map_type),
+                    _ => eprintln!("eBPF map_type {} is NOT available", map_type),
+                }
             });
         }
         Err(_) => eprintln!("bpf() syscall is NOT available"),

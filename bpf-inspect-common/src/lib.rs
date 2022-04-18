@@ -296,6 +296,12 @@ impl MapType {
     }
 }
 
+impl Display for MapType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name())
+    }
+}
+
 struct MapTypeIter(u32);
 
 impl Iterator for MapTypeIter {
