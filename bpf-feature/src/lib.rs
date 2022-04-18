@@ -31,14 +31,6 @@ pub enum DetectError {
     CapAccess,
     #[error("missing CAP_SYS_ADMIN for full feature probe")]
     CapSysAdmin,
-
-    #[error("no bpf syscall on system")]
-    NoBpfSyscall,
-    #[error("failure to load bpf program")]
-    BpfProgLoad,
-
-    #[error("std::io::Error: {0}")]
-    IO(#[from] std::io::Error),
 }
 
 #[derive(ThisError, Debug)]
@@ -240,18 +232,26 @@ impl Runtime {
     }
 }
 
+#[derive(ThisError, Debug)]
+pub enum BpfError {
+    #[error("no bpf syscall on system")]
+    NoBpfSyscall,
+    #[error("bpf-inspect-common::Error: {0}")]
+    ProbeErr(#[from] BpfInspectError),
+}
+
 #[derive(Debug)]
 pub struct Bpf {
     pub has_bpf_syscall: bool,
-    pub program_types: HashMap<ProgramType, Result<bool, BpfInspectError>>,
-    pub map_types: HashMap<MapType, Result<bool, BpfInspectError>>,
-    pub helpers: HashMap<ProgramType, Result<Vec<BpfHelper>, BpfInspectError>>,
+    pub program_types: HashMap<ProgramType, Result<bool, BpfError>>,
+    pub map_types: HashMap<MapType, Result<bool, BpfError>>,
+    pub helpers: HashMap<ProgramType, Result<Vec<BpfHelper>, BpfError>>,
 }
 
 impl Bpf {
-    pub fn features() -> Result<Bpf, DetectError> {
+    pub fn features() -> Result<Bpf, BpfError> {
         if !Self::probe_syscall() {
-            return Err(DetectError::NoBpfSyscall);
+            return Err(BpfError::NoBpfSyscall);
         }
 
         Ok(Bpf {
@@ -277,19 +277,29 @@ impl Bpf {
         Errno::last() != Errno::ENOSYS
     }
 
-    fn probe_program_types() -> HashMap<ProgramType, Result<bool, BpfInspectError>> {
+    fn probe_program_types() -> HashMap<ProgramType, Result<bool, BpfError>> {
         ProgramType::iter()
-            .map(|program_type| (program_type, program_type.probe()))
+            .map(|program_type| {
+                (
+                    program_type,
+                    program_type.probe().map_err(|err| BpfError::ProbeErr(err)),
+                )
+            })
             .collect()
     }
 
-    fn probe_map_types() -> HashMap<MapType, Result<bool, BpfInspectError>> {
+    fn probe_map_types() -> HashMap<MapType, Result<bool, BpfError>> {
         MapType::iter()
-            .map(|map_type| (map_type, map_type.probe()))
+            .map(|map_type| {
+                (
+                    map_type,
+                    map_type.probe().map_err(|err| BpfError::ProbeErr(err)),
+                )
+            })
             .collect()
     }
 
-    fn probe_helpers() -> HashMap<ProgramType, Result<Vec<BpfHelper>, BpfInspectError>> {
+    fn probe_helpers() -> HashMap<ProgramType, Result<Vec<BpfHelper>, BpfError>> {
         ProgramType::iter()
             .map(|program_type| {
                 let helpers = BpfHelperIter::new()
@@ -389,7 +399,7 @@ impl Misc {
 pub struct Features {
     pub runtime: Result<Runtime, RuntimeError>,
     pub kernel_config: Result<KernelConfig, KernelConfigError>,
-    pub bpf: Result<Bpf, DetectError>,
+    pub bpf: Result<Bpf, BpfError>,
     pub misc: Misc,
 }
 
