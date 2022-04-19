@@ -248,7 +248,7 @@ pub struct Bpf {
     pub has_bpf_syscall: bool,
     pub program_types: HashMap<ProgramType, Result<bool, BpfError>>,
     pub map_types: HashMap<MapType, Result<bool, BpfError>>,
-    pub helpers: HashMap<ProgramType, Result<Vec<BpfHelper>, BpfError>>,
+    pub helpers: HashMap<ProgramType, Vec<Result<BpfHelper, BpfError>>>,
 }
 
 pub struct BpfFeaturesOpts {
@@ -314,7 +314,7 @@ impl Bpf {
             .collect()
     }
 
-    fn probe_helpers(full: bool) -> HashMap<ProgramType, Result<Vec<BpfHelper>, BpfError>> {
+    fn probe_helpers(full: bool) -> HashMap<ProgramType, Vec<Result<BpfHelper, BpfError>>> {
         ProgramType::iter()
             .map(|program_type| {
                 let helpers = BpfHelperIter::new()
@@ -328,14 +328,15 @@ impl Bpf {
                                 _ => {}
                             };
                         }
-                        if program_type.probe_helper(helper).unwrap_or(false) {
-                            Some(helper)
-                        } else {
-                            None
+
+                        match program_type.probe_helper(helper) {
+                            Ok(true) => Some(Ok(helper)),
+                            Ok(false) => None,
+                            Err(err) => Some(Err(BpfError::ProbeErr(err))),
                         }
                     })
                     .collect();
-                (program_type, Ok(helpers))
+                (program_type, helpers)
             })
             .collect()
     }

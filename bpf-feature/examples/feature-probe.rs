@@ -1,5 +1,5 @@
-use bpf_feature::{detect, DetectOpts, KernelConfig, KERNEL_CONFIG_KEYS};
-use bpf_inspect_common::{MapType, ProgramType};
+use bpf_feature::{detect, BpfError, DetectOpts, KernelConfig, Misc, KERNEL_CONFIG_KEYS};
+use bpf_inspect_common::{BpfHelper, MapType, ProgramType};
 
 fn main() {
     let features = match detect(DetectOpts::default()) {
@@ -83,7 +83,6 @@ fn main() {
         Ok(bpf) => {
             println!("bpf() syscall is available");
             println!("\nScanning eBPF program types...");
-
             ProgramType::iter().for_each(|ref program_type| {
                 match bpf.program_types.get(program_type) {
                     Some(Ok(true)) => println!("eBPF program_type {} is available", program_type),
@@ -100,14 +99,58 @@ fn main() {
             println!("\nScanning eBPF helper functions...");
             ProgramType::iter().for_each(|ref program_type| {
                 println!("eBPF helpers supported for program type {}:", program_type);
-                match bpf.helpers.get(program_type) {
-                    Some(Ok(helpers)) => helpers.iter().for_each(|helper| {
-                        println!("\t- {}", helper);
-                    }),
-                    _ => {}
-                }
+                match bpf.program_types.get(program_type) {
+                    Some(Ok(true)) => match bpf.helpers.get(program_type) {
+                        Some(probes) => {
+                            let (successes, failures): (
+                                Vec<&Result<BpfHelper, BpfError>>,
+                                Vec<&Result<BpfHelper, BpfError>>,
+                            ) = probes.iter().partition(|probe| probe.is_ok());
+                            if successes.len() == 0 && failures.len() > 0 {
+                                println!("\tCould not determine which helpers are available");
+                            } else {
+                                successes.iter().for_each(|&helper| {
+                                    println!("\t- {}", helper.as_ref().unwrap().name());
+                                });
+                            }
+                        }
+                        _ => {
+                            println!("\tCould not determine which helpers are available");
+                        }
+                    },
+                    Some(Ok(false)) => {
+                        println!("\tProgram type not supported");
+                    }
+                    _ => {
+                        println!("\tCould not determine which helpers are available");
+                    }
+                };
             });
         }
         Err(_) => println!("bpf() syscall is NOT available"),
     }
+
+    println!("\nScanning miscellaneous eBPF features...");
+    let Misc {
+        large_insn_limit,
+        bounded_loops,
+        isa_v2_ext,
+        isa_v3_ext,
+    } = features.misc;
+    println!(
+        "Large program size limit {} available",
+        if large_insn_limit { "is" } else { "is NOT" }
+    );
+    println!(
+        "Bounded loop support {} available",
+        if bounded_loops { "is" } else { "is NOT" }
+    );
+    println!(
+        "ISA extension v2 {} available",
+        if isa_v2_ext { "is" } else { "is NOT" }
+    );
+    println!(
+        "ISA extension v3 {} available",
+        if isa_v3_ext { "is" } else { "is NOT" }
+    );
 }
