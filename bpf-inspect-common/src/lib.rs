@@ -320,7 +320,7 @@ impl Iterator for MapTypeIter {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct BpfHelper(u32);
+pub struct BpfHelper(pub u32);
 
 impl BpfHelper {
     pub fn name(&self) -> &'static str {

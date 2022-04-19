@@ -3,7 +3,10 @@ use bpf_inspect_common::{
     BpfHelper, BpfHelperIter, Error as BpfInspectError, MapType, ProgramLicense, ProgramType,
 };
 use flate2::bufread::GzDecoder;
-use libbpf_sys::{bpf_insn, bpf_prog_load, BPF_MAXINSNS};
+use libbpf_sys::{
+    bpf_insn, bpf_prog_load, BPF_FUNC_probe_write_user, BPF_FUNC_trace_printk,
+    BPF_FUNC_trace_vprintk, BPF_MAXINSNS,
+};
 use std::{
     collections::HashMap,
     fmt::Display,
@@ -248,8 +251,20 @@ pub struct Bpf {
     pub helpers: HashMap<ProgramType, Result<Vec<BpfHelper>, BpfError>>,
 }
 
+pub struct BpfFeaturesOpts {
+    full_helpers: bool,
+}
+
+impl Default for BpfFeaturesOpts {
+    fn default() -> Self {
+        Self {
+            full_helpers: false,
+        }
+    }
+}
+
 impl Bpf {
-    pub fn features() -> Result<Bpf, BpfError> {
+    pub fn features(opts: BpfFeaturesOpts) -> Result<Bpf, BpfError> {
         if !Self::probe_syscall() {
             return Err(BpfError::NoBpfSyscall);
         }
@@ -258,7 +273,7 @@ impl Bpf {
             has_bpf_syscall: true,
             program_types: Self::probe_program_types(),
             map_types: Self::probe_map_types(),
-            helpers: Self::probe_helpers(),
+            helpers: Self::probe_helpers(opts.full_helpers),
         })
     }
 
@@ -299,11 +314,20 @@ impl Bpf {
             .collect()
     }
 
-    fn probe_helpers() -> HashMap<ProgramType, Result<Vec<BpfHelper>, BpfError>> {
+    fn probe_helpers(full: bool) -> HashMap<ProgramType, Result<Vec<BpfHelper>, BpfError>> {
         ProgramType::iter()
             .map(|program_type| {
                 let helpers = BpfHelperIter::new()
                     .filter_map(|helper| {
+                        if !full {
+                            #[allow(non_upper_case_globals)]
+                            match helper.0 {
+                                BPF_FUNC_trace_printk
+                                | BPF_FUNC_trace_vprintk
+                                | BPF_FUNC_probe_write_user => return None,
+                                _ => {}
+                            };
+                        }
                         if program_type.probe_helper(helper).unwrap_or(false) {
                             Some(helper)
                         } else {
@@ -405,11 +429,15 @@ pub struct Features {
 
 pub struct DetectOpts {
     privileged: bool,
+    full_helpers: bool,
 }
 
 impl Default for DetectOpts {
     fn default() -> Self {
-        Self { privileged: true }
+        Self {
+            privileged: true,
+            full_helpers: false,
+        }
     }
 }
 
@@ -434,7 +462,9 @@ pub fn detect(opts: DetectOpts) -> Result<Features, DetectError> {
     Ok(Features {
         runtime: Runtime::features(),
         kernel_config: KernelConfig::features(),
-        bpf: Bpf::features(),
+        bpf: Bpf::features(BpfFeaturesOpts {
+            full_helpers: opts.full_helpers,
+        }),
         misc: Misc::features(),
     })
 }
