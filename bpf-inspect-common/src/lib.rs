@@ -109,6 +109,7 @@ impl ProgramType {
         }
     }
 
+    /// May return true for unsupported program types
     pub fn probe_helper(&self, helper: BpfHelper) -> Result<bool, Error> {
         match unsafe { libbpf_probe_bpf_helper((*self).into(), helper.0, ptr::null()) } {
             negative if negative < 0 => Err(Error::Code(negative)),

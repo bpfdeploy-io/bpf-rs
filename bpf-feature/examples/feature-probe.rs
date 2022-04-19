@@ -1,19 +1,19 @@
 use bpf_feature::{detect, DetectOpts, KernelConfig, KERNEL_CONFIG_KEYS};
-use bpf_inspect_common::{ProgramType, MapType};
+use bpf_inspect_common::{MapType, ProgramType};
 
 fn main() {
-    println!("Scanning system configuration...");
     let features = match detect(DetectOpts::default()) {
         Ok(features) => features,
         Err(err) => {
-            eprintln!("Error fetching features: {}", err);
+            println!("Error fetching features: {}", err);
             return;
         }
     };
 
+    println!("Scanning system configuration...");
     match features.runtime {
         Err(_) => {
-            eprintln!("/* procfs not mounted, skipping related probes */");
+            println!("/* procfs not mounted, skipping related probes */");
         }
         Ok(runtime) => {
             match runtime.unprivileged_disabled {
@@ -27,7 +27,7 @@ fn main() {
                     }
                     unknown => println!("bpf() syscall restriction has unknown value: {}", unknown),
                 },
-                Err(_) => eprintln!("Unable to retrieve required privileges for bpf() syscall"),
+                Err(_) => println!("Unable to retrieve required privileges for bpf() syscall"),
             };
 
             match runtime.jit_enable {
@@ -37,7 +37,7 @@ fn main() {
                     2 => println!("JIT compiler is enabled with debugging traces in kernel logs"),
                     unknown => println!("JIT compiler status has unknown value: {}", unknown),
                 },
-                Err(_) => eprintln!("Unable to retrieve JIT-compiler status"),
+                Err(_) => println!("Unable to retrieve JIT-compiler status"),
             }
 
             match runtime.jit_harden {
@@ -47,7 +47,7 @@ fn main() {
                     2 => println!("JIT compiler hardening is enabled for all users"),
                     unknown => println!("JIT hardening status has unknown value: {}", unknown),
                 },
-                Err(_) => eprintln!("Unable to retrieve JIT hardening status"),
+                Err(_) => println!("Unable to retrieve JIT hardening status"),
             }
 
             match runtime.jit_kallsyms {
@@ -58,12 +58,12 @@ fn main() {
                         println!("JIT kallsyms exports status has unknown value: {}", unknown)
                     }
                 },
-                Err(_) => eprintln!("Unable to retrieve JIT kallsyms export status"),
+                Err(_) => println!("Unable to retrieve JIT kallsyms export status"),
             }
 
             match runtime.jit_limit {
                 Ok(prop) => println!("Global memory limit for JIT compiler for unprivileged users is {} bytes", prop),
-                Err(_) => eprintln!("Unable to retrieve global memory limit for JIT compiler for unprivileged users"),
+                Err(_) => println!("Unable to retrieve global memory limit for JIT compiler for unprivileged users"),
             }
         }
     }
@@ -71,11 +71,11 @@ fn main() {
     match features.kernel_config {
         Ok(KernelConfig { values }) => KERNEL_CONFIG_KEYS.iter().for_each(|&key| {
             match values.get(key) {
-                Some(value) => println!("{} is set {}", key, value),
+                Some(value) => println!("{} is set to {}", key, value),
                 None => println!("{} is not set", key),
             };
         }),
-        Err(err) => eprintln!("skipping kernel config, {}", err),
+        Err(err) => println!("skipping kernel config, {}", err),
     }
 
     println!("\nScanning system call availability...");
@@ -87,18 +87,27 @@ fn main() {
             ProgramType::iter().for_each(|ref program_type| {
                 match bpf.program_types.get(program_type) {
                     Some(Ok(true)) => println!("eBPF program_type {} is available", program_type),
-                    _ => eprintln!("eBPF program_type {} is NOT available", program_type),
+                    _ => println!("eBPF program_type {} is NOT available", program_type),
                 };
             });
 
             println!("\nScanning eBPF map types...");
-            MapType::iter().for_each(|ref map_type| {
-                match bpf.map_types.get(map_type) {
-                    Some(Ok(true)) => println!("eBPF map_type {} is available", map_type),
-                    _ => eprintln!("eBPF map_type {} is NOT available", map_type),
+            MapType::iter().for_each(|ref map_type| match bpf.map_types.get(map_type) {
+                Some(Ok(true)) => println!("eBPF map_type {} is available", map_type),
+                _ => println!("eBPF map_type {} is NOT available", map_type),
+            });
+
+            println!("\nScanning eBPF helper functions...");
+            ProgramType::iter().for_each(|ref program_type| {
+                println!("eBPF helpers supported for program type {}:", program_type);
+                match bpf.helpers.get(program_type) {
+                    Some(Ok(helpers)) => helpers.iter().for_each(|helper| {
+                        println!("\t- {}", helper);
+                    }),
+                    _ => {}
                 }
             });
         }
-        Err(_) => eprintln!("bpf() syscall is NOT available"),
+        Err(_) => println!("bpf() syscall is NOT available"),
     }
 }
