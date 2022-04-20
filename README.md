@@ -4,7 +4,7 @@ A collection of Rust libraries for inspecting & managing eBPF objects.
 
 ## Crates
 
-### bpf-feature
+### [bpf-feature](./bpf-feature/README.md)
 
 A bpf feature detection library based on [bpftool](https://github.com/libbpf/bpftool)'s `feature` subcommand.
 
