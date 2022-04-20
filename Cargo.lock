@@ -76,7 +76,7 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 name = "bpf-feature"
 version = "0.1.0"
 dependencies = [
- "bpf-inspect-common",
+ "bpf-rs",
  "caps",
  "flate2",
  "libbpf-sys",
@@ -85,21 +85,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "bpf-inspect-common"
-version = "0.0.0"
+name = "bpf-obj-dump"
+version = "0.1.0"
 dependencies = [
+ "bpf-rs",
+ "errno",
  "libbpf-sys",
- "num_enum",
  "thiserror",
 ]
 
 [[package]]
-name = "bpf-obj-dump"
-version = "0.1.0"
+name = "bpf-rs"
+version = "0.0.0"
 dependencies = [
- "bpf-inspect-common",
- "errno",
  "libbpf-sys",
+ "num_enum",
  "thiserror",
 ]
 

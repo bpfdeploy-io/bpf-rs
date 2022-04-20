@@ -3,6 +3,6 @@
 members = [
     "bpf-feature",
     "bpf-obj-dump",
-    "bpf-inspect-common",
+    "bpf-rs",
     "libbpf-sys",
 ]

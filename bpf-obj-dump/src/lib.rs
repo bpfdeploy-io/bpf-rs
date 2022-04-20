@@ -1,4 +1,4 @@
-use bpf_inspect_common::{ProgramInfo as ProgramInner, ProgramType};
+use bpf_rs::{ProgramInfo as ProgramInner, ProgramType};
 use errno::{errno, Errno};
 use libbpf_sys::bpf_prog_info;
 use std::{ffi::c_void, num::TryFromIntError, os::unix::prelude::*, time::Duration};

@@ -1,6 +1,6 @@
-use bpf_inspect_common::{
+use bpf_rs::{
     bpf_asm::{alu64_imm, exit, jmp32_imm, jmp_imm, mov64_imm, BpfJmp, BpfOp, BpfRegister},
-    BpfHelper, BpfHelperIter, Error as BpfInspectError, MapType, ProgramLicense, ProgramType,
+    BpfHelper, BpfHelperIter, Error as BpfSysError, MapType, ProgramLicense, ProgramType,
 };
 use flate2::bufread::GzDecoder;
 use libbpf_sys::{
@@ -239,8 +239,8 @@ impl Runtime {
 pub enum BpfError {
     #[error("no bpf syscall on system")]
     NoBpfSyscall,
-    #[error("bpf-inspect-common::Error: {0}")]
-    ProbeErr(#[from] BpfInspectError),
+    #[error("bpf-rs::Error: {0}")]
+    ProbeErr(#[from] BpfSysError),
 }
 
 #[derive(Debug)]

@@ -1,4 +1,4 @@
-# bpf-inspect
+# bpf-rs
 
 A collection of Rust libraries for inspecting & managing eBPF objects.
 
@@ -16,7 +16,7 @@ This allows clients to use feature detection (such as reading procfs values, ker
 
 A work-in-progress library to aid in the dumping of eBPF programs and maps.
 
-### bpf-inspect-common
+### bpf-rs
 
 A collection of bpf utilities shared amongst the other crates.
 

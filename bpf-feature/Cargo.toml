@@ -12,4 +12,4 @@ flate2 = "1.0.22"
 nix = "0.23.1"
 thiserror = "1.0.30"
 libbpf-sys = { path = "../libbpf-sys" }
-bpf-inspect-common = { path = "../bpf-inspect-common" }
+bpf-rs = { path = "../bpf-rs" }

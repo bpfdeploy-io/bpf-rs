@@ -1,5 +1,5 @@
 use bpf_feature::{detect, BpfError, DetectOpts, KernelConfig, Misc, KERNEL_CONFIG_KEYS};
-use bpf_inspect_common::{BpfHelper, MapType, ProgramType};
+use bpf_rs::{BpfHelper, MapType, ProgramType};
 
 fn main() {
     let features = match detect(DetectOpts::default()) {
