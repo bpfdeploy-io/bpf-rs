@@ -4,5 +4,4 @@ members = [
     "bpf-feature",
     "bpf-obj-dump",
     "bpf-rs",
-    "libbpf-sys",
 ]

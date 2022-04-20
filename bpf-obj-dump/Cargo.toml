@@ -8,6 +8,6 @@ license-file = "LICENSE"
 
 [dependencies]
 errno = "0.2.8"
-libbpf-sys = { path = "../libbpf-sys" }
 thiserror = "1.0.30"
 bpf-rs = { path = "../bpf-rs" }
+libbpf-sys = { git = "https://github.com/mdaverde/libbpf-sys.git", branch = "bpf-rs" }

@@ -7,6 +7,6 @@ license-file = "LICENSE"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libbpf-sys = { path = "../libbpf-sys" }
 num_enum = "0.5.7"
 thiserror = "1.0.30"
+libbpf-sys = { git = "https://github.com/mdaverde/libbpf-sys.git", branch = "bpf-rs" }
