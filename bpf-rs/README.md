@@ -1,13 +1,16 @@
-# bpf-rs
+<div align="center">
+  <h1>bpf-rs</h1>
+    <p>
+      A safe, lean library for inspecting and querying eBPF objects.
+    </p>
+  <br>
+</div>
 
-`bpf-rs` is a safe, lean library for inspecting and querying eBPF objects. A lot of the design & inspiration stems from [bpftool](https://github.com/libbpf/bpftool) and [libbpf-rs](https://docs.rs/libbpf-rs).
+## Background
 
-It is based upon the work of [libbpf-sys](https://github.com/libbpf/libbpf-sys) to safely create wrappers around [libbpf](https://github.com/libbpf/libbpf).
-
-## Non goals
+It is based upon the work of [libbpf-sys](https://github.com/libbpf/libbpf-sys) to safely create wrappers around [libbpf](https://github.com/libbpf/libbpf). A lot of the design & inspiration stems from [bpftool](https://github.com/libbpf/bpftool) and [libbpf-rs](https://docs.rs/libbpf-rs).
 
 This crate is **NOT** meant to help with writing and loading of eBPF programs and maps. For that, we recommend [libbpf-rs](https://docs.rs/libbpf-rs) and [libbpf-cargo](https://docs.rs/libbpf-cargo).
-
 
 ## Installation
 
@@ -20,4 +23,16 @@ To use in your project, add into your `Cargo.toml`:
 bpf-rs = "0.0.5"
 ```
 
-See [documentation here](https://docs.rs/bpf-rs/0.0.5/bpf_rs/)
+or using [cargo-edit](https://github.com/killercup/cargo-edit):
+
+```sh
+$ cargo add bpf-rs
+```
+
+## Documentation
+
+See [documentation here](https://docs.rs/bpf-rs/)
+
+## License
+
+[BSD 2-Clause](https://choosealicense.com/licenses/bsd-2-clause) - Maintained by [bpfdeploy.io](https://bpfdeploy.io)

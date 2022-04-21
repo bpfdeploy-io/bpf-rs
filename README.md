@@ -1,6 +1,10 @@
-# bpf-rs
-
-A collection of Rust crates for inspecting & managing eBPF objects.
+<div align="center">
+  <h1>bpf-rs</h1>
+    <p>
+      A collection of Rust libraries for inspecting & managing eBPF objects.
+    </p>
+  <br>
+</div>
 
 ## Crates
 
