@@ -20,10 +20,6 @@ A work-in-progress library to aid in the dumping of eBPF programs and maps.
 
 A collection of bpf utilities shared amongst the other crates.
 
-### libbpf-sys
-
-Vendoring of the [libbpf-sys](https://github.com/libbpf/libbpf-sys) Rust bindings to generate some of our own customizations. We hope to remove the vendoring shortly and send our changes upstream.
-
 ## Licenses
 
 Most, if not all, of the crates published here fall under the permissive [BSD 2-Clause](https://choosealicense.com/licenses/bsd-2-clause/#) license.
