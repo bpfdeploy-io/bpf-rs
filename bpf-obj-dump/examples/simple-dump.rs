@@ -1,5 +1,6 @@
 use std::env;
 
+use bpf_rs::libbpf_sys;
 use bpf_obj_dump::{dump_program, ProgramDumpMode};
 
 fn main() {
