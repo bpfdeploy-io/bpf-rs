@@ -25,9 +25,9 @@ name = "bpf-feature"
 version = "0.1.0"
 dependencies = [
  "bpf-rs",
+ "bpfdeploy-libbpf-sys",
  "caps",
  "flate2",
- "libbpf-sys",
  "nix",
  "thiserror",
 ]
@@ -37,8 +37,8 @@ name = "bpf-obj-dump"
 version = "0.1.0"
 dependencies = [
  "bpf-rs",
+ "bpfdeploy-libbpf-sys",
  "errno",
- "libbpf-sys",
  "thiserror",
 ]
 
@@ -46,9 +46,19 @@ dependencies = [
 name = "bpf-rs"
 version = "0.0.0"
 dependencies = [
- "libbpf-sys",
+ "bpfdeploy-libbpf-sys",
  "num_enum",
  "thiserror",
+]
+
+[[package]]
+name = "bpfdeploy-libbpf-sys"
+version = "0.7.0+v0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f46be9d4ccb878a4e61ba087d83f33212a3dbf75c16aceb851c0f1e453b2f874"
+dependencies = [
+ "cc",
+ "pkg-config",
 ]
 
 [[package]]
@@ -114,15 +124,6 @@ dependencies = [
  "crc32fast",
  "libc",
  "miniz_oxide",
-]
-
-[[package]]
-name = "libbpf-sys"
-version = "0.7.0+v0.7.0"
-source = "git+https://github.com/mdaverde/libbpf-sys.git?branch=bpf-rs#53e4bc0e6f4aaf2d87f294721440c448ceabfd05"
-dependencies = [
- "cc",
- "pkg-config",
 ]
 
 [[package]]

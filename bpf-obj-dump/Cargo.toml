@@ -10,4 +10,4 @@ license-file = "LICENSE"
 errno = "0.2.8"
 thiserror = "1.0.30"
 bpf-rs = { path = "../bpf-rs" }
-libbpf-sys = { git = "https://github.com/mdaverde/libbpf-sys.git", branch = "bpf-rs" }
+libbpf-sys = { version = "0.7.0", package = "bpfdeploy-libbpf-sys" }
