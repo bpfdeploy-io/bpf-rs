@@ -1,9 +1,9 @@
 [package]
 name = "bpf-rs"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2021"
 homepage = "https://bpfdeploy.io"
-description = "A safe collection of eBPF utilities"
+description = "A safe, lean library for inspecting and querying eBPF objects"
 keywords = ["bpf", "ebpf"]
 readme = "README.md"
 license = "BSD-2-Clause"
