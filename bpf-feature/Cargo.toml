@@ -13,4 +13,3 @@ flate2 = "1.0.22"
 nix = "0.23.1"
 thiserror = "1.0.30"
 bpf-rs = { path = "../bpf-rs" }
-libbpf-sys = { version = "0.7.0", package = "bpfdeploy-libbpf-sys" }

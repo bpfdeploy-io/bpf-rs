@@ -1,12 +1,12 @@
+use bpf_rs::libbpf_sys::{
+    bpf_insn, bpf_prog_load, BPF_FUNC_probe_write_user, BPF_FUNC_trace_printk,
+    BPF_FUNC_trace_vprintk, BPF_MAXINSNS,
+};
 use bpf_rs::{
     insns::{alu64_imm, exit, jmp32_imm, jmp_imm, mov64_imm, BpfJmp, BpfOp, BpfRegister},
     BpfHelper, BpfHelperIter, Error as BpfSysError, MapType, ProgramLicense, ProgramType,
 };
 use flate2::bufread::GzDecoder;
-use libbpf_sys::{
-    bpf_insn, bpf_prog_load, BPF_FUNC_probe_write_user, BPF_FUNC_trace_printk,
-    BPF_FUNC_trace_vprintk, BPF_MAXINSNS,
-};
 use std::{
     collections::HashMap,
     fmt::Display,

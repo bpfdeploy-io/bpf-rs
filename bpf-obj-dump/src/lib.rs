@@ -1,6 +1,6 @@
+use bpf_rs::libbpf_sys::{bpf_obj_get_info_by_fd, bpf_prog_info};
 use bpf_rs::{ProgramInfo as ProgramInner, ProgramType};
 use errno::{errno, Errno};
-use libbpf_sys::bpf_prog_info;
 use std::{ffi::c_void, num::TryFromIntError, os::unix::prelude::*, time::Duration};
 use thiserror::Error as ThisError;
 
@@ -18,7 +18,7 @@ pub struct ProgramInfo {
 }
 
 impl ProgramInfo {
-    fn from_raw(raw: libbpf_sys::bpf_prog_info) -> Self {
+    fn from_raw(raw: bpf_prog_info) -> Self {
         let raw_name = &raw.name;
         let c = raw_name
             .iter()
@@ -75,9 +75,7 @@ impl ProgramInfo {
         let mut info: bpf_prog_info = unsafe { std::mem::zeroed() };
         let info_ptr: *mut bpf_prog_info = &mut info;
         let mut info_len = std::mem::size_of::<bpf_prog_info>() as u32;
-        let err = unsafe {
-            libbpf_sys::bpf_obj_get_info_by_fd(fd, info_ptr as *mut c_void, &mut info_len)
-        };
+        let err = unsafe { bpf_obj_get_info_by_fd(fd, info_ptr as *mut c_void, &mut info_len) };
         if err != 0 {
             Err(ObjDumpError::Errno(errno()))
         } else {
@@ -92,9 +90,8 @@ impl ProgramInfo {
         let mut info: bpf_prog_info = unsafe { zeroed() };
         let info_ptr: *mut bpf_prog_info = &mut info;
         let mut prog_info_size = std::mem::size_of::<bpf_prog_info>() as u32;
-        let err = unsafe {
-            libbpf_sys::bpf_obj_get_info_by_fd(fd, info_ptr as *mut c_void, &mut prog_info_size)
-        };
+        let err =
+            unsafe { bpf_obj_get_info_by_fd(fd, info_ptr as *mut c_void, &mut prog_info_size) };
 
         if err != 0 {
             return Err(ObjDumpError::Errno(errno()));
@@ -167,7 +164,7 @@ impl ProgramInfo {
 
         // Do dump
         let err = unsafe {
-            libbpf_sys::bpf_obj_get_info_by_fd(
+            bpf_obj_get_info_by_fd(
                 fd,
                 (&mut bare as *mut bpf_prog_info) as *mut c_void,
                 &mut prog_info_size,

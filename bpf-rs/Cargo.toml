@@ -14,4 +14,4 @@ authors = ["Milan <milan@mdaverde.com>"]
 [dependencies]
 num_enum = "0.5.7"
 thiserror = "1.0.30"
-libbpf-sys = { version = "0.7.0", package = "bpfdeploy-libbpf-sys" }
+libbpf-sys = { version = "0.7.1", package = "bpfdeploy-libbpf-sys" }

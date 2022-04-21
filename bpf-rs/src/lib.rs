@@ -28,6 +28,8 @@ use std::{
 };
 use thiserror::Error as ThisError;
 
+pub use libbpf_sys;
+
 #[derive(ThisError, Debug)]
 pub enum Error {
     #[error("errno: {0}")]

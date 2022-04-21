@@ -11,4 +11,3 @@ publish = false
 errno = "0.2.8"
 thiserror = "1.0.30"
 bpf-rs = { path = "../bpf-rs" }
-libbpf-sys = { version = "0.7.0", package = "bpfdeploy-libbpf-sys" }
