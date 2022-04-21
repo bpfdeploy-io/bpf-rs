@@ -376,7 +376,7 @@ impl Iterator for BpfHelperIter {
     }
 }
 
-pub mod bpf_asm {
+pub mod insns {
     use libbpf_sys::{
         bpf_insn, BPF_JLT, BPF_JNE, BPF_REG_0, BPF_REG_1, BPF_SUB, _BPF_ALU64_IMM, _BPF_EXIT_INSN,
         _BPF_JMP32_IMM, _BPF_JMP_IMM, _BPF_MOV64_IMM,
