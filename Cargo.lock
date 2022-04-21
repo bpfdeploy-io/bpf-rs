@@ -44,7 +44,7 @@ dependencies = [
 
 [[package]]
 name = "bpf-rs"
-version = "0.0.1"
+version = "0.0.3"
 dependencies = [
  "bpfdeploy-libbpf-sys",
  "num_enum",

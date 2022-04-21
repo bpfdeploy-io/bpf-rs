@@ -1,12 +1,12 @@
 [package]
 name = "bpf-rs"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 homepage = "https://bpfdeploy.io"
 description = "A safe collection of eBPF utilities"
 keywords = ["bpf", "ebpf"]
 readme = "README.md"
-license-file = "LICENSE"
+license = "BSD-2-Clause"
 authors = ["Milan <milan@mdaverde.com>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
