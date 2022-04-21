@@ -1,3 +1,19 @@
+//! # bpf-rs
+//!
+//! `bpf-rs` is a safe, lean library for inspecting and querying eBPF objects. A lot of the
+//! design & inspiration stems from [bpftool](https://github.com/libbpf/bpftool) internals and
+//! [libbpf-rs](https://docs.rs/libbpf-rs).
+//!
+//! It is based upon the work of [libbpf-sys](https://github.com/libbpf/libbpf-sys) to safely create
+//! wrappers around [libbpf](https://github.com/libbpf/libbpf).
+//!
+//! # Non goals
+//!
+//! This crate is **NOT** meant to help with writing and loading of eBPF programs
+//! and maps. For that, we recommend [libbpf-rs](https://docs.rs/libbpf-rs) and
+//! [libbpf-cargo](https://docs.rs/libbpf-cargo).
+//!
+
 use libbpf_sys::{
     _bpf_helper_func_names, libbpf_probe_bpf_helper, libbpf_probe_bpf_map_type,
     libbpf_probe_bpf_prog_type, __BPF_FUNC_MAX_ID,
@@ -22,7 +38,8 @@ pub enum Error {
     Unknown(i32),
 }
 
-/// Must abide by enum bpf_prog_type in kernel headers
+/// eBPF program type variants. Based off of [kernel header's](https://github.com/torvalds/linux/blob/b253435746d9a4a701b5f09211b9c14d3370d0da/include/uapi/linux/bpf.h#L922)
+/// `enum bpf_prog_type`
 #[non_exhaustive]
 #[repr(u32)]
 #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
@@ -62,6 +79,9 @@ pub enum ProgramType {
 }
 
 impl ProgramType {
+    /// Based off of bpftool's
+    /// [`prog_type_name`](https://github.com/libbpf/bpftool/blob/9443d42430017ed2d04d7ab411131525ced62d6a/src/prog.c#L39),
+    /// returns a human-readable name of the eBPF program type.
     pub fn name(&self) -> &'static str {
         match *self {
             ProgramType::Unspec => "unspec",
@@ -99,6 +119,7 @@ impl ProgramType {
         }
     }
 
+    /// Determines if the eBPF program type is supported on the current platform
     pub fn probe(&self) -> Result<bool, Error> {
         match unsafe { libbpf_probe_bpf_prog_type((*self).into(), ptr::null()) } {
             negative if negative < 0 => Err(Error::Code(negative)),
@@ -109,7 +130,11 @@ impl ProgramType {
         }
     }
 
-    /// May return true for unsupported program types
+    /// Determines if the eBPF program helper function can be used my supported program types.
+    ///
+    /// **Note**: Due to libbpf's `libbpf_probe_bpf_helper`, this may return Ok(true) for unsupported program
+    /// types. It is recommended to verify if the program type is supported before probing for helper
+    /// support.
     pub fn probe_helper(&self, helper: BpfHelper) -> Result<bool, Error> {
         match unsafe { libbpf_probe_bpf_helper((*self).into(), helper.0, ptr::null()) } {
             negative if negative < 0 => Err(Error::Code(negative)),
@@ -120,7 +145,10 @@ impl ProgramType {
         }
     }
 
-    /// Skips BPF_PROGRAM_TYPE_UNSPEC since it's an invalid program type
+    /// Returns an ordered iterator over the [`ProgramType`] variants. The order is determined by the kernel
+    /// header's [enum values](https://github.com/torvalds/linux/blob/b253435746d9a4a701b5f09211b9c14d3370d0da/include/uapi/linux/bpf.h#L922).
+    ///
+    /// **Note**: Skips [`ProgramType::Unspec`] since it's an invalid program type
     pub fn iter() -> impl Iterator<Item = ProgramType> {
         ProgramTypeIter(1)
     }
@@ -206,7 +234,8 @@ impl ProgramLicense {
     }
 }
 
-/// Must abide by enum bpf_map_type in kernel headers
+/// eBPF map type variants. Based off of [kernel header's](https://github.com/torvalds/linux/blob/b253435746d9a4a701b5f09211b9c14d3370d0da/include/uapi/linux/bpf.h#L880)
+/// `enum bpf_map_type`
 #[non_exhaustive]
 #[repr(u32)]
 #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
@@ -245,6 +274,9 @@ pub enum MapType {
 }
 
 impl MapType {
+    /// Based off of bpftool's
+    /// [`map_type_name`](https://github.com/libbpf/bpftool/blob/9443d42430017ed2d04d7ab411131525ced62d6a/src/map.c#L25),
+    /// returns a human-readable name of the eBPF map type.
     pub fn name(&self) -> &'static str {
         match *self {
             MapType::Unspec => "unspec",
@@ -281,6 +313,7 @@ impl MapType {
         }
     }
 
+    /// Determines if the eBPF map type is supported on the current platform
     pub fn probe(&self) -> Result<bool, Error> {
         match unsafe { libbpf_probe_bpf_map_type((*self).into(), ptr::null()) } {
             negative if negative < 0 => Err(Error::Code(negative)),
@@ -291,7 +324,10 @@ impl MapType {
         }
     }
 
-    /// Skips BPF_MAP_TYPE_UNSPEC since it's an invalid map type
+    /// Returns an ordered iterator over the MapType variants. The order is determined by the kernel
+    /// header's [enum values](https://github.com/torvalds/linux/blob/b253435746d9a4a701b5f09211b9c14d3370d0da/include/uapi/linux/bpf.h#L880).
+    ///
+    /// **Note**: Skips [`MapType::Unspec`] since it's an invalid map type
     pub fn iter() -> impl Iterator<Item = MapType> {
         MapTypeIter(1)
     }
