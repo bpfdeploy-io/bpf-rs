@@ -1,3 +1,0 @@
-[submodule "libbpf-sys"]
-	path = libbpf-sys
-	url = git@github.com:mdaverde/libbpf-sys.git
