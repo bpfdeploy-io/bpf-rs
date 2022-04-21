@@ -2,7 +2,11 @@
 name = "bpf-rs"
 version = "0.0.1"
 edition = "2021"
+description = "A safe collection of eBPF utilities"
+categories = ["bpf", "ebpf"]
+readme = "README.md"
 license-file = "LICENSE"
+authors = ["Milan <milan@mdaverde.com>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
