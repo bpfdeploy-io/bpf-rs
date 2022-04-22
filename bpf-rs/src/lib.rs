@@ -1,5 +1,3 @@
-//! # bpf-rs
-//!
 //! `bpf-rs` is a safe, lean library for inspecting and querying eBPF objects. A lot of the
 //! design & inspiration stems from [bpftool](https://github.com/libbpf/bpftool) internals and
 //! [libbpf-rs](https://docs.rs/libbpf-rs).
@@ -7,9 +5,7 @@
 //! It is based upon the work of [libbpf-sys](https://github.com/libbpf/libbpf-sys) to safely create
 //! wrappers around [libbpf](https://github.com/libbpf/libbpf).
 //!
-//! # Non goals
-//!
-//! This crate is **NOT** meant to help with writing and loading of eBPF programs
+//! This crate is **NOT** meant to help with writing and loading of sophisticated eBPF programs
 //! and maps. For that, we recommend [libbpf-rs](https://docs.rs/libbpf-rs) and
 //! [libbpf-cargo](https://docs.rs/libbpf-cargo).
 //!
@@ -414,29 +410,58 @@ impl Iterator for BpfHelperIter {
     }
 }
 
+/// Safe primitives for the eBPF instruction set. See [kernel documentation](https://www.kernel.org/doc/html/latest/bpf/instruction-set.html)
+///
+/// The exports here should allow for the creation of eBPF programs that can be loaded into the kernel.
+/// The functions provide a convenient away to create semantically-correct instructions.
+///
+/// The exported functions currently return the underlying libbpf_sys's bpf_insn binding of
+/// so loading the program  through other libbpf_sys functions should work.
+/// In the future, we should provide convenient functions to encapsulate this.
+///
 pub mod insns {
+    use libbpf_sys as sys;
     use libbpf_sys::{
-        bpf_insn, BPF_JLT, BPF_JNE, BPF_REG_0, BPF_REG_1, BPF_SUB, _BPF_ALU64_IMM, _BPF_EXIT_INSN,
-        _BPF_JMP32_IMM, _BPF_JMP_IMM, _BPF_MOV64_IMM,
+        bpf_insn, BPF_JLT, BPF_JNE, _BPF_ALU64_IMM, _BPF_EXIT_INSN, _BPF_JMP32_IMM, _BPF_JMP_IMM,
+        _BPF_MOV64_IMM,
     };
     use num_enum::{IntoPrimitive, TryFromPrimitive};
 
+    /// Registers variants
+    ///
+    /// Source: [kernel tree](https://github.com/torvalds/linux/blob/d569e86915b7f2f9795588591c8d5ea0b66481cb/tools/include/uapi/linux/bpf.h#L53)
     #[repr(u8)]
     #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
     pub enum BpfRegister {
-        R0 = BPF_REG_0 as u8,
-        R1 = BPF_REG_1 as u8,
+        R0 = sys::BPF_REG_0 as u8,
+        R1 = sys::BPF_REG_1 as u8,
+        R2 = sys::BPF_REG_2 as u8,
+        R3 = sys::BPF_REG_3 as u8,
+        R4 = sys::BPF_REG_4 as u8,
+        R5 = sys::BPF_REG_5 as u8,
+        R6 = sys::BPF_REG_6 as u8,
+        R7 = sys::BPF_REG_7 as u8,
+        R8 = sys::BPF_REG_8 as u8,
+        R9 = sys::BPF_REG_9 as u8,
+        R10 = sys::BPF_REG_10 as u8,
     }
 
+    /// Arithmetic instructions
+    ///
+    /// These are meant to be used with the BPF_ALU and BPF_ALU64 instruction classes
+    ///
+    /// Source: [kernel tree](https://github.com/torvalds/linux/blob/d569e86915b7f2f9795588591c8d5ea0b66481cb/tools/include/uapi/linux/bpf_common.h#L31)
     #[repr(u8)]
     #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
-    pub enum BpfOp {
-        Sub = BPF_SUB as u8,
+    pub enum BpfAluOp {
+        Add = sys::BPF_ADD as u8,
+        Sub = sys::BPF_SUB as u8,
     }
 
+    /// Jump operations
     #[repr(u8)]
     #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
-    pub enum BpfJmp {
+    pub enum BpfJmpOp {
         JNE = BPF_JNE as u8,
         JLT = BPF_JLT as u8,
     }
@@ -445,15 +470,15 @@ pub mod insns {
         unsafe { _BPF_MOV64_IMM(reg.into(), imm) }
     }
 
-    pub fn alu64_imm(op: BpfOp, reg: BpfRegister, imm: i32) -> bpf_insn {
+    pub fn alu64_imm(op: BpfAluOp, reg: BpfRegister, imm: i32) -> bpf_insn {
         unsafe { _BPF_ALU64_IMM(op.into(), reg.into(), imm) }
     }
 
-    pub fn jmp_imm(jmp: BpfJmp, reg: BpfRegister, imm: i32, off: i16) -> bpf_insn {
+    pub fn jmp_imm(jmp: BpfJmpOp, reg: BpfRegister, imm: i32, off: i16) -> bpf_insn {
         unsafe { _BPF_JMP_IMM(jmp.into(), reg.into(), imm, off) }
     }
 
-    pub fn jmp32_imm(jmp: BpfJmp, reg: BpfRegister, imm: i32, off: i16) -> bpf_insn {
+    pub fn jmp32_imm(jmp: BpfJmpOp, reg: BpfRegister, imm: i32, off: i16) -> bpf_insn {
         unsafe { _BPF_JMP32_IMM(jmp.into(), reg.into(), imm, off) }
     }
 

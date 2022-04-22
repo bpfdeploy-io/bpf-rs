@@ -1,6 +1,11 @@
-# bpf-feature
+<div align="center">
+  <h1>bpf-feature</h1>
+  <p>
+    A Rust library for BPF feature detection
+  </p>
+  <br>
+</div>
 
- A Rust library for BPF feature detection
 
 ## Background
 

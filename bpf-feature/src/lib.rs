@@ -3,7 +3,7 @@ use bpf_rs::libbpf_sys::{
     BPF_FUNC_trace_vprintk, BPF_MAXINSNS,
 };
 use bpf_rs::{
-    insns::{alu64_imm, exit, jmp32_imm, jmp_imm, mov64_imm, BpfJmp, BpfOp, BpfRegister},
+    insns::{alu64_imm, exit, jmp32_imm, jmp_imm, mov64_imm, BpfJmpOp, BpfAluOp, BpfRegister},
     BpfHelper, BpfHelperIter, Error as BpfSysError, MapType, ProgramLicense, ProgramType,
 };
 use flate2::bufread::GzDecoder;
@@ -392,8 +392,8 @@ impl Misc {
     fn probe_bounded_loops() -> bool {
         let insns = vec![
             mov64_imm(BpfRegister::R0, 10),
-            alu64_imm(BpfOp::Sub, BpfRegister::R0, 1),
-            jmp_imm(BpfJmp::JNE, BpfRegister::R0, 0, -2),
+            alu64_imm(BpfAluOp::Sub, BpfRegister::R0, 1),
+            jmp_imm(BpfJmpOp::JNE, BpfRegister::R0, 0, -2),
             exit(),
         ];
         Self::load_insns(insns)
@@ -402,7 +402,7 @@ impl Misc {
     fn probe_isa_v2() -> bool {
         let insns = vec![
             mov64_imm(BpfRegister::R0, 0),
-            jmp_imm(BpfJmp::JLT, BpfRegister::R0, 0, 1),
+            jmp_imm(BpfJmpOp::JLT, BpfRegister::R0, 0, 1),
             mov64_imm(BpfRegister::R0, 1),
             exit(),
         ];
@@ -412,7 +412,7 @@ impl Misc {
     fn probe_isa_v3() -> bool {
         let insns = vec![
             mov64_imm(BpfRegister::R0, 0),
-            jmp32_imm(BpfJmp::JLT, BpfRegister::R0, 0, 1),
+            jmp32_imm(BpfJmpOp::JLT, BpfRegister::R0, 0, 1),
             mov64_imm(BpfRegister::R0, 1),
             exit(),
         ];

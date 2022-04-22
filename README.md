@@ -1,8 +1,8 @@
 <div align="center">
   <h1>bpf-rs</h1>
-    <p>
-      A collection of Rust libraries for inspecting & managing eBPF objects.
-    </p>
+  <p>
+    A collection of Rust libraries for inspecting & managing eBPF objects.
+  </p>
   <br>
 </div>
 
