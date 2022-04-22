@@ -1,6 +1,6 @@
 [package]
 name = "bpf-rs"
-version = "0.0.5"
+version = "0.0.6"
 edition = "2021"
 homepage = "https://bpfdeploy.io"
 description = "A safe, lean library for inspecting and querying eBPF objects"
