@@ -10,6 +10,8 @@
 //! [libbpf-cargo](https://docs.rs/libbpf-cargo).
 //!
 
+pub mod insns;
+
 use libbpf_sys::{
     _bpf_helper_func_names, libbpf_probe_bpf_helper, libbpf_probe_bpf_map_type,
     libbpf_probe_bpf_prog_type, __BPF_FUNC_MAX_ID,
@@ -410,92 +412,9 @@ impl Iterator for BpfHelperIter {
     }
 }
 
-/// Safe primitives for the eBPF instruction set. See [kernel documentation](https://www.kernel.org/doc/html/latest/bpf/instruction-set.html)
-///
-/// The exports here should allow for the creation of eBPF programs that can be loaded into the kernel.
-/// The functions provide a convenient away to create semantically-correct instructions.
-///
-/// The exported functions currently return the underlying libbpf_sys's bpf_insn binding of
-/// so loading the program  through other libbpf_sys functions should work.
-/// In the future, we should provide convenient functions to encapsulate this.
-///
-pub mod insns {
-    use libbpf_sys as sys;
-    use libbpf_sys::{
-        bpf_insn, BPF_JLT, BPF_JNE, _BPF_ALU64_IMM, _BPF_EXIT_INSN, _BPF_JMP32_IMM, _BPF_JMP_IMM,
-        _BPF_MOV64_IMM,
-    };
-    use num_enum::{IntoPrimitive, TryFromPrimitive};
-
-    /// Registers variants
-    ///
-    /// Source: [kernel tree](https://github.com/torvalds/linux/blob/d569e86915b7f2f9795588591c8d5ea0b66481cb/tools/include/uapi/linux/bpf.h#L53)
-    #[repr(u8)]
-    #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
-    pub enum BpfRegister {
-        R0 = sys::BPF_REG_0 as u8,
-        R1 = sys::BPF_REG_1 as u8,
-        R2 = sys::BPF_REG_2 as u8,
-        R3 = sys::BPF_REG_3 as u8,
-        R4 = sys::BPF_REG_4 as u8,
-        R5 = sys::BPF_REG_5 as u8,
-        R6 = sys::BPF_REG_6 as u8,
-        R7 = sys::BPF_REG_7 as u8,
-        R8 = sys::BPF_REG_8 as u8,
-        R9 = sys::BPF_REG_9 as u8,
-        R10 = sys::BPF_REG_10 as u8,
-    }
-
-    /// Arithmetic instructions
-    ///
-    /// These are meant to be used with the BPF_ALU and BPF_ALU64 instruction classes
-    ///
-    /// Source: [kernel tree](https://github.com/torvalds/linux/blob/d569e86915b7f2f9795588591c8d5ea0b66481cb/tools/include/uapi/linux/bpf_common.h#L31)
-    #[repr(u8)]
-    #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
-    pub enum BpfAluOp {
-        Add = sys::BPF_ADD as u8,
-        Sub = sys::BPF_SUB as u8,
-    }
-
-    /// Jump operations
-    #[repr(u8)]
-    #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
-    pub enum BpfJmpOp {
-        JNE = BPF_JNE as u8,
-        JLT = BPF_JLT as u8,
-    }
-
-    pub fn mov64_imm(reg: BpfRegister, imm: i32) -> bpf_insn {
-        unsafe { _BPF_MOV64_IMM(reg.into(), imm) }
-    }
-
-    pub fn alu64_imm(op: BpfAluOp, reg: BpfRegister, imm: i32) -> bpf_insn {
-        unsafe { _BPF_ALU64_IMM(op.into(), reg.into(), imm) }
-    }
-
-    pub fn jmp_imm(jmp: BpfJmpOp, reg: BpfRegister, imm: i32, off: i16) -> bpf_insn {
-        unsafe { _BPF_JMP_IMM(jmp.into(), reg.into(), imm, off) }
-    }
-
-    pub fn jmp32_imm(jmp: BpfJmpOp, reg: BpfRegister, imm: i32, off: i16) -> bpf_insn {
-        unsafe { _BPF_JMP32_IMM(jmp.into(), reg.into(), imm, off) }
-    }
-
-    pub fn exit() -> bpf_insn {
-        unsafe { _BPF_EXIT_INSN() }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
 
     #[test]
     fn bpf_helper_iter() {
