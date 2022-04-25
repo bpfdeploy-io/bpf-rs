@@ -14,15 +14,11 @@
 //! have been added over time, resulting in different versions of the eBPF instruction set. We will denote
 //! if an operation is part of the v2 or v3 instruction set.
 //!
-//! For more info, see [Paul Chaignon's blog post](https://pchaigno.github.io/bpf/2021/10/20/ebpf-instruction-sets.html)
+//! For more info, see [BPF Design Q&A](https://www.kernel.org/doc/html/latest/bpf/bpf_design_QA.html#q-why-bpf-jlt-and-bpf-jle-instructions-were-not-introduced-in-the-beginning)
+//! and [Paul Chaignon's blog post](https://pchaigno.github.io/bpf/2021/10/20/ebpf-instruction-sets.html)
 //!
 use libbpf_sys as sys;
-use libbpf_sys::{
-    bpf_insn, BPF_JLT, BPF_JNE, _BPF_ALU64_IMM, _BPF_EXIT_INSN, _BPF_JMP32_IMM, _BPF_JMP_IMM,
-    _BPF_MOV64_IMM,
-};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
-use sys::BPF_JA;
 
 /// Instruction classes
 ///
@@ -120,28 +116,42 @@ pub enum AluOp {
 #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum JmpOp {
     /// Only allowed with the BPF_JMP instruction class
-    JA = BPF_JA as u8,
-    JNE = BPF_JNE as u8,
+    JA = sys::BPF_JA as u8,
+    JEQ = sys::BPF_JEQ as u8,
+    JGT = sys::BPF_JGT as u8,
+    JGE = sys::BPF_JGE as u8,
+    JSET = sys::BPF_JSET as u8,
+    JNE = sys::BPF_JNE as u8,
+    JSGT = sys::BPF_JSGT as u8,
+    JSGE = sys::BPF_JSGE as u8,
+    CALL = sys::BPF_CALL as u8,
+    EXIT = sys::BPF_EXIT as u8,
     /// Part of [ISA v2](./#instruction-set-isa-versions)
-    JLT = BPF_JLT as u8,
+    JLT = sys::BPF_JLT as u8,
+    /// Part of [ISA v2](./#instruction-set-isa-versions)
+    JLE = sys::BPF_JLE as u8,
+    /// Part of [ISA v2](./#instruction-set-isa-versions)
+    JSLT = sys::BPF_JSLT as u8,
+    /// Part of [ISA v2](./#instruction-set-isa-versions)
+    JSLE = sys::BPF_JSLE as u8,
 }
 
-pub fn mov64_imm(reg: Register, imm: i32) -> bpf_insn {
-    unsafe { _BPF_MOV64_IMM(reg.into(), imm) }
+pub fn mov64_imm(reg: Register, imm: i32) -> sys::bpf_insn {
+    unsafe { sys::_BPF_MOV64_IMM(reg.into(), imm) }
 }
 
-pub fn alu64_imm(op: AluOp, reg: Register, imm: i32) -> bpf_insn {
-    unsafe { _BPF_ALU64_IMM(op.into(), reg.into(), imm) }
+pub fn alu64_imm(op: AluOp, reg: Register, imm: i32) -> sys::bpf_insn {
+    unsafe { sys::_BPF_ALU64_IMM(op.into(), reg.into(), imm) }
 }
 
-pub fn jmp_imm(jmp: JmpOp, reg: Register, imm: i32, off: i16) -> bpf_insn {
-    unsafe { _BPF_JMP_IMM(jmp.into(), reg.into(), imm, off) }
+pub fn jmp_imm(jmp: JmpOp, reg: Register, imm: i32, off: i16) -> sys::bpf_insn {
+    unsafe { sys::_BPF_JMP_IMM(jmp.into(), reg.into(), imm, off) }
 }
 
-pub fn jmp32_imm(jmp: JmpOp, reg: Register, imm: i32, off: i16) -> bpf_insn {
-    unsafe { _BPF_JMP32_IMM(jmp.into(), reg.into(), imm, off) }
+pub fn jmp32_imm(jmp: JmpOp, reg: Register, imm: i32, off: i16) -> sys::bpf_insn {
+    unsafe { sys::_BPF_JMP32_IMM(jmp.into(), reg.into(), imm, off) }
 }
 
-pub fn exit() -> bpf_insn {
-    unsafe { _BPF_EXIT_INSN() }
+pub fn exit() -> sys::bpf_insn {
+    unsafe { sys::_BPF_EXIT_INSN() }
 }
