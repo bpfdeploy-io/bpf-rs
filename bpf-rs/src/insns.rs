@@ -21,7 +21,7 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 /// Source: [kernel tree](https://github.com/torvalds/linux/blob/d569e86915b7f2f9795588591c8d5ea0b66481cb/tools/include/uapi/linux/bpf.h#L53)
 #[repr(u8)]
 #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum BpfRegister {
+pub enum Register {
     R0 = sys::BPF_REG_0 as u8,
     R1 = sys::BPF_REG_1 as u8,
     R2 = sys::BPF_REG_2 as u8,
@@ -79,24 +79,24 @@ pub enum AluOp {
 /// Jump operations
 #[repr(u8)]
 #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum BpfJmpOp {
+pub enum JmpOp {
     JNE = BPF_JNE as u8,
     JLT = BPF_JLT as u8,
 }
 
-pub fn mov64_imm(reg: BpfRegister, imm: i32) -> bpf_insn {
+pub fn mov64_imm(reg: Register, imm: i32) -> bpf_insn {
     unsafe { _BPF_MOV64_IMM(reg.into(), imm) }
 }
 
-pub fn alu64_imm(op: AluOp, reg: BpfRegister, imm: i32) -> bpf_insn {
+pub fn alu64_imm(op: AluOp, reg: Register, imm: i32) -> bpf_insn {
     unsafe { _BPF_ALU64_IMM(op.into(), reg.into(), imm) }
 }
 
-pub fn jmp_imm(jmp: BpfJmpOp, reg: BpfRegister, imm: i32, off: i16) -> bpf_insn {
+pub fn jmp_imm(jmp: JmpOp, reg: Register, imm: i32, off: i16) -> bpf_insn {
     unsafe { _BPF_JMP_IMM(jmp.into(), reg.into(), imm, off) }
 }
 
-pub fn jmp32_imm(jmp: BpfJmpOp, reg: BpfRegister, imm: i32, off: i16) -> bpf_insn {
+pub fn jmp32_imm(jmp: JmpOp, reg: Register, imm: i32, off: i16) -> bpf_insn {
     unsafe { _BPF_JMP32_IMM(jmp.into(), reg.into(), imm, off) }
 }
 

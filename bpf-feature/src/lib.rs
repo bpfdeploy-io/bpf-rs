@@ -3,7 +3,7 @@ use bpf_rs::libbpf_sys::{
     BPF_FUNC_trace_vprintk, BPF_MAXINSNS,
 };
 use bpf_rs::{
-    insns::{alu64_imm, exit, jmp32_imm, jmp_imm, mov64_imm, BpfJmpOp, BpfAluOp, BpfRegister},
+    insns::{alu64_imm, exit, jmp32_imm, jmp_imm, mov64_imm, JmpOp, AluOp, Register},
     BpfHelper, BpfHelperIter, Error as BpfSysError, MapType, ProgramLicense, ProgramType,
 };
 use flate2::bufread::GzDecoder;
@@ -384,16 +384,16 @@ impl Misc {
 
     fn probe_large_insn_limit() -> bool {
         let max_insns = usize::try_from(BPF_MAXINSNS).unwrap();
-        let mut large_insn_prog = vec![mov64_imm(BpfRegister::R0, 1); max_insns + 1];
+        let mut large_insn_prog = vec![mov64_imm(Register::R0, 1); max_insns + 1];
         large_insn_prog[max_insns] = exit();
         Self::load_insns(large_insn_prog)
     }
 
     fn probe_bounded_loops() -> bool {
         let insns = vec![
-            mov64_imm(BpfRegister::R0, 10),
-            alu64_imm(BpfAluOp::Sub, BpfRegister::R0, 1),
-            jmp_imm(BpfJmpOp::JNE, BpfRegister::R0, 0, -2),
+            mov64_imm(Register::R0, 10),
+            alu64_imm(AluOp::Sub, Register::R0, 1),
+            jmp_imm(JmpOp::JNE, Register::R0, 0, -2),
             exit(),
         ];
         Self::load_insns(insns)
@@ -401,9 +401,9 @@ impl Misc {
 
     fn probe_isa_v2() -> bool {
         let insns = vec![
-            mov64_imm(BpfRegister::R0, 0),
-            jmp_imm(BpfJmpOp::JLT, BpfRegister::R0, 0, 1),
-            mov64_imm(BpfRegister::R0, 1),
+            mov64_imm(Register::R0, 0),
+            jmp_imm(JmpOp::JLT, Register::R0, 0, 1),
+            mov64_imm(Register::R0, 1),
             exit(),
         ];
         Self::load_insns(insns)
@@ -411,9 +411,9 @@ impl Misc {
 
     fn probe_isa_v3() -> bool {
         let insns = vec![
-            mov64_imm(BpfRegister::R0, 0),
-            jmp32_imm(BpfJmpOp::JLT, BpfRegister::R0, 0, 1),
-            mov64_imm(BpfRegister::R0, 1),
+            mov64_imm(Register::R0, 0),
+            jmp32_imm(JmpOp::JLT, Register::R0, 0, 1),
+            mov64_imm(Register::R0, 1),
             exit(),
         ];
         Self::load_insns(insns)
