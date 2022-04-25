@@ -392,7 +392,7 @@ impl Misc {
     fn probe_bounded_loops() -> bool {
         let insns = vec![
             mov64_imm(Register::R0, 10),
-            alu64_imm(AluOp::Sub, Register::R0, 1),
+            alu64_imm(AluOp::SUB, Register::R0, 1),
             jmp_imm(JmpOp::JNE, Register::R0, 0, -2),
             exit(),
         ];
