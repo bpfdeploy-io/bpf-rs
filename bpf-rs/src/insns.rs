@@ -4,7 +4,7 @@
 //! The exports here should allow for the creation of simple eBPF programs that can be loaded into the kernel.
 //! The functions provide a convenient away to create valid instructions.
 //!
-//! The exported functions currently return the underlying libbpf_sys's bpf_insn binding
+//! The exported functions currently return the underlying libbpf_sys's `bpf_insn` binding
 //! so loading the program  through other libbpf_sys functions should work.
 //! In the future, we should provide convenient functions to encapsulate this.
 //!
@@ -16,6 +16,26 @@
 //!
 //! For more info, see [BPF Design Q&A](https://www.kernel.org/doc/html/latest/bpf/bpf_design_QA.html#q-why-bpf-jlt-and-bpf-jle-instructions-were-not-introduced-in-the-beginning)
 //! and [Paul Chaignon's blog post](https://pchaigno.github.io/bpf/2021/10/20/ebpf-instruction-sets.html)
+//!
+//! # Example
+//!
+//! As an example use case of the primitives here, for feature detection we can run a small eBPF
+//! program that determines if [bounded loops](https://lwn.net/Articles/794934/)
+//! (introduced in the v5.3 kernel) are supported:
+//!
+//!```
+//! # fn load_insns<S>(v: Vec<S>) -> bool { true }
+//! use bpf_rs::insns::*;
+//! // Inspired by bpftool's feature probing
+//! let bounded_loops_insns = vec![
+//!     mov64_imm(Register::R0, 10),
+//!     alu64_imm(AluOp::SUB, Register::R0, 1),
+//!     jmp_imm(JmpOp::JNE, Register::R0, 0, -2),
+//!     exit(),
+//! ];
+//! // Returns true if program was successfully loaded into the kernel
+//! let bounded_loops_supported: bool = load_insns(bounded_loops_insns);
+//!```
 //!
 use libbpf_sys as sys;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
