@@ -9,7 +9,6 @@
 //! and maps. For that, we recommend [libbpf-rs](https://docs.rs/libbpf-rs) and
 //! [libbpf-cargo](https://docs.rs/libbpf-cargo).
 //!
-
 pub mod insns;
 
 use libbpf_sys::{
@@ -215,18 +214,23 @@ pub struct ProgramInfo {
     pub run_cnt: u64,
 }
 
+/// Collection of eBPF program license types (e.g. GPL)
+///
+/// Mostly a smaller wrapper for FFI use cases
 #[non_exhaustive]
 pub enum ProgramLicense {
     GPL,
 }
 
 impl ProgramLicense {
+    /// Accepted license string with a nul byte at the end
     pub fn as_str_with_nul(&self) -> &'static str {
         match *self {
             ProgramLicense::GPL => "GPL\0",
         }
     }
 
+    /// For FFI (such as using with `libbpf_sys`)
     pub fn as_ptr(&self) -> *const raw::c_char {
         CStr::from_bytes_with_nul(self.as_str_with_nul().as_bytes())
             .unwrap()
