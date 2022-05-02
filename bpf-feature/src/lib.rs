@@ -16,7 +16,10 @@ use nix::{
     unistd,
 };
 #[cfg(feature = "serde")]
-use serde::{ser::SerializeStruct, Serialize};
+use serde::{
+    ser::SerializeStruct,
+    Serialize,
+};
 use std::{
     collections::HashMap,
     fmt::Display,
@@ -29,6 +32,9 @@ use thiserror::Error as ThisError;
 
 #[cfg(feature = "serde")]
 mod serde_utils {
+    use serde::ser::SerializeSeq;
+    use std::collections::HashMap;
+
     pub fn flatten_result<S, T, E>(result: &Result<T, E>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -39,6 +45,26 @@ mod serde_utils {
             Ok(t) => t.serialize(serializer),
             Err(e) => e.serialize(serializer),
         }
+    }
+
+    pub fn filter_list<S, K, E>(
+        map: &HashMap<K, Result<bool, E>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+        K: serde::ser::Serialize,
+    {
+        let mut seq = serializer.serialize_seq(None)?;
+        for (k, v) in map.iter() {
+            match v {
+                Ok(true) => {
+                    seq.serialize_element(k)?;
+                }
+                _ => {}
+            };
+        }
+        seq.end()
     }
 }
 #[derive(ThisError, Debug)]
@@ -285,7 +311,9 @@ pub enum BpfError {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Bpf {
     pub has_bpf_syscall: bool,
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_utils::filter_list"))]
     pub program_types: HashMap<ProgramType, Result<bool, BpfError>>,
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_utils::filter_list"))]
     pub map_types: HashMap<MapType, Result<bool, BpfError>>,
     pub helpers: HashMap<ProgramType, Vec<Result<BpfHelper, BpfError>>>,
 }
