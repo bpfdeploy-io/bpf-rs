@@ -1,3 +1,5 @@
+// TODO: enable #![warn(missing_docs)]
+// TODO: enable #![warn(missing_doc_code_examples)]
 //! `bpf-rs` is a safe, lean library for inspecting and querying eBPF objects. A lot of the
 //! design & inspiration stems from [bpftool](https://github.com/libbpf/bpftool) internals and
 //! [libbpf-rs](https://docs.rs/libbpf-rs).
@@ -175,6 +177,8 @@ impl Iterator for ProgramTypeIter {
     }
 }
 
+/// eBPF program object info. Similar to (but not the same) kernel header's
+/// [struct bpf_prog_info](https://github.com/torvalds/linux/blob/672c0c5173427e6b3e2a9bbb7be51ceeec78093a/include/uapi/linux/bpf.h#L5840)
 #[derive(Debug)]
 #[repr(C)]
 pub struct ProgramInfo {
@@ -359,10 +363,25 @@ impl Iterator for MapTypeIter {
     }
 }
 
+/// eBPF helper function wrapper. See [`bpf-helpers(7)`](https://man7.org/linux/man-pages/man7/bpf-helpers.7.html)
+///
+/// Tuple field [`BpfHelper::0`] represents the unique id reserved by the kernel to represent the helper function. This
+/// unique id works almost as a counter with a max value:
+/// [`__BPF_FUNC_MAX_ID`](https://github.com/torvalds/linux/blob/672c0c5173427e6b3e2a9bbb7be51ceeec78093a/include/uapi/linux/bpf.h#L5350).
+/// This max limit changes between kernel versions due to the addition of eBPF helper functions.
+///
+/// For more information on eBPF helper functions, check out (although slightly outdated)
+/// [Marsden's Oracle blog post](https://blogs.oracle.com/linux/post/bpf-in-depth-bpf-helper-functions).
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct BpfHelper(pub u32);
 
 impl BpfHelper {
+    /// Human-readable name for an eBPF helper function
+    ///
+    /// In the kernel, eBPF helper functions are usually represented as an int. This tries to create
+    /// a digestable name for the helper functions but will return `<unknown>` or `<utf8err>` if not
+    /// possible. For example, in the case that [`BpfHelper::0`] is outside the
+    /// `__BPF_FUNC_MAX_ID` limit.
     pub fn name(&self) -> &'static str {
         match usize::try_from(self.0) {
             Ok(func_idx) => {
@@ -393,10 +412,17 @@ impl Debug for BpfHelper {
     }
 }
 
+/// Iterator for the eBPF helper functions
 pub struct BpfHelperIter(u32);
 
 impl BpfHelperIter {
-    // Skips unspec helper
+    /// Creates an ordered iterator
+    ///
+    /// Order here is based on the ascending int ids used to represent the helper
+    /// functions within the kernel. For most cases, this ordering property isn't
+    /// needed.
+    ///
+    /// **Note**: Skips `unspec` helper since it's an invalid function
     pub fn new() -> Self {
         Self(1)
     }

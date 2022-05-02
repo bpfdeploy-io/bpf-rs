@@ -16,8 +16,6 @@ use std::{
     ptr,
 };
 use thiserror::Error as ThisError;
-// TODO: if this is the only use of nix
-// then consider just using libc
 use nix::{
     errno::{errno, Errno},
     sys::{
@@ -27,7 +25,6 @@ use nix::{
     unistd,
 };
 
-// TODO: consider splitting up so that library clients don't need to match against all of them?
 #[derive(ThisError, Debug)]
 pub enum DetectError {
     #[error("failed to access capabilities")]
