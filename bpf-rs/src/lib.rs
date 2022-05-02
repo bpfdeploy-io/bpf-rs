@@ -18,6 +18,8 @@ use libbpf_sys::{
     libbpf_probe_bpf_prog_type, __BPF_FUNC_MAX_ID,
 };
 use num_enum::{IntoPrimitive, TryFromPrimitive};
+#[cfg(feature = "serde")]
+use serde::Serialize;
 use std::{
     ffi::CStr,
     fmt::{Debug, Display},
@@ -44,6 +46,7 @@ pub enum Error {
 #[non_exhaustive]
 #[repr(u32)]
 #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum ProgramType {
     Unspec = 0,
     SocketFilter,
@@ -289,6 +292,7 @@ impl ProgramLicense {
 #[non_exhaustive]
 #[repr(u32)]
 #[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum MapType {
     Unspec = 0,
     Hash,
@@ -415,6 +419,7 @@ impl Iterator for MapTypeIter {
 /// For more information on eBPF helper functions, check out (although slightly outdated)
 /// [Marsden's Oracle blog post](https://blogs.oracle.com/linux/post/bpf-in-depth-bpf-helper-functions).
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct BpfHelper(pub u32);
 
 impl BpfHelper {
