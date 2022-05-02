@@ -20,7 +20,7 @@ To use in your project, add into your `Cargo.toml`:
 
 ```toml
 [dependencies]
-bpf-rs = "0.0.6"
+bpf-rs = "0.0.7"
 ```
 
 or using [cargo-edit](https://github.com/killercup/cargo-edit):
