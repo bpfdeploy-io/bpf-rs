@@ -3,10 +3,20 @@ use bpf_rs::libbpf_sys::{
     BPF_FUNC_trace_vprintk, BPF_MAXINSNS,
 };
 use bpf_rs::{
-    insns::{alu64_imm, exit, jmp32_imm, jmp_imm, mov64_imm, JmpOp, AluOp, Register},
+    insns::{alu64_imm, exit, jmp32_imm, jmp_imm, mov64_imm, AluOp, JmpOp, Register},
     BpfHelper, BpfHelperIter, Error as BpfSysError, MapType, ProgramLicense, ProgramType,
 };
 use flate2::bufread::GzDecoder;
+use nix::{
+    errno::{errno, Errno},
+    sys::{
+        statfs::{statfs, PROC_SUPER_MAGIC},
+        utsname,
+    },
+    unistd,
+};
+#[cfg(feature = "serde")]
+use serde::{ser::SerializeStruct, Serialize};
 use std::{
     collections::HashMap,
     fmt::Display,
@@ -16,15 +26,21 @@ use std::{
     ptr,
 };
 use thiserror::Error as ThisError;
-use nix::{
-    errno::{errno, Errno},
-    sys::{
-        statfs::{statfs, PROC_SUPER_MAGIC},
-        utsname,
-    },
-    unistd,
-};
 
+#[cfg(feature = "serde")]
+mod serde_utils {
+    pub fn flatten_result<S, T, E>(result: &Result<T, E>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+        T: serde::ser::Serialize,
+        E: serde::ser::Serialize,
+    {
+        match result {
+            Ok(t) => t.serialize(serializer),
+            Err(e) => e.serialize(serializer),
+        }
+    }
+}
 #[derive(ThisError, Debug)]
 pub enum DetectError {
     #[error("failed to access capabilities")]
@@ -34,6 +50,7 @@ pub enum DetectError {
 }
 
 #[derive(ThisError, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum KernelConfigError {
     #[error("can't open file")]
     NotFound,
@@ -44,6 +61,7 @@ pub enum KernelConfigError {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum ConfigValue {
     Y,
     N,
@@ -103,7 +121,9 @@ pub const KERNEL_CONFIG_KEYS: [&'static str; 35] = [
 ];
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct KernelConfig {
+    #[cfg_attr(feature = "serde", serde(flatten))]
     pub values: KernelConfigValues,
 }
 
@@ -191,11 +211,32 @@ pub enum RuntimeError {
 type ProcfsResult = Result<usize, RuntimeError>;
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Runtime {
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serde_utils::flatten_result")
+    )]
     pub unprivileged_disabled: ProcfsResult,
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serde_utils::flatten_result")
+    )]
     pub jit_enable: ProcfsResult,
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serde_utils::flatten_result")
+    )]
     pub jit_harden: ProcfsResult,
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serde_utils::flatten_result")
+    )]
     pub jit_kallsyms: ProcfsResult,
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serde_utils::flatten_result")
+    )]
     pub jit_limit: ProcfsResult,
 }
 
@@ -241,6 +282,7 @@ pub enum BpfError {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Bpf {
     pub has_bpf_syscall: bool,
     pub program_types: HashMap<ProgramType, Result<bool, BpfError>>,
@@ -340,6 +382,7 @@ impl Bpf {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Misc {
     pub large_insn_limit: bool,
     pub bounded_loops: bool,
@@ -418,9 +461,22 @@ impl Misc {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Features {
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serde_utils::flatten_result")
+    )]
     pub runtime: Result<Runtime, RuntimeError>,
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serde_utils::flatten_result")
+    )]
     pub kernel_config: Result<KernelConfig, KernelConfigError>,
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serde_utils::flatten_result")
+    )]
     pub bpf: Result<Bpf, BpfError>,
     pub misc: Misc,
 }
