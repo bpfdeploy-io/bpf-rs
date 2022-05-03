@@ -29,14 +29,18 @@ use thiserror::Error as ThisError;
 
 #[cfg(feature = "serde")]
 mod serde_utils {
-    use serde::ser::{SerializeMap, SerializeSeq};
+    use serde::{
+        ser::{Serialize, SerializeMap, SerializeSeq},
+        Serializer,
+    };
     use std::collections::HashMap;
 
-    pub fn flatten_result<S, T, E>(result: &Result<T, E>, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn flatten_result<S>(
+        result: &Result<impl Serialize, impl Serialize>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
-        T: serde::ser::Serialize,
-        E: serde::ser::Serialize,
+        S: Serializer,
     {
         match result {
             Ok(t) => t.serialize(serializer),
@@ -44,13 +48,12 @@ mod serde_utils {
         }
     }
 
-    pub fn to_list<S, K, E>(
-        map: &HashMap<K, Result<bool, E>>,
+    pub fn to_list<S, E>(
+        map: &HashMap<impl Serialize, Result<bool, E>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
-        K: serde::ser::Serialize,
+        S: Serializer,
     {
         let mut seq = serializer.serialize_seq(None)?;
         for (k, v) in map.iter() {
@@ -64,14 +67,12 @@ mod serde_utils {
         seq.end()
     }
 
-    pub fn to_list_inner<S, K, H, E>(
-        map: &HashMap<K, Vec<Result<H, E>>>,
+    pub fn to_list_inner<S, E>(
+        map: &HashMap<impl Serialize, Vec<Result<impl Serialize, E>>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
-        K: serde::ser::Serialize,
-        H: serde::ser::Serialize,
+        S: Serializer,
     {
         let mut seq = serializer.serialize_map(None)?;
         for (k, v) in map.iter() {
