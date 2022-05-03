@@ -182,19 +182,61 @@ impl Iterator for ProgramTypeIter {
 #[derive(Debug)]
 #[repr(C)]
 pub struct ProgramInfo {
+    /// Name of eBPF program
+    ///
+    /// **Note**: This is usually set on program load but is not required so it may be an
+    /// empty string.
     pub name: String,
+    /// Each eBPF program has a unique program type that determines its functionality and
+    /// available features, such as helper functions.
+    ///
+    /// For more information, see [Marsden's blog post](https://blogs.oracle.com/linux/post/bpf-a-tour-of-program-types).
     pub ty: ProgramType,
+    /// A SHA hash over the eBPF program instructions which can be used to
+    /// correlate back to the original object file
+    ///
+    /// Multiple eBPF programs may share the same xlated instructions and therefore
+    /// may have the same hashes so these are not guaranteed to be unique to each
+    /// eBPF program. For that, you may want to use [`ProgramInfo::id`].
     pub tag: [u8; 8],
+    /// A unique identifier for the eBPF program
+    ///
+    /// Unique here meaning since the boot time of the machine. The counter used
+    /// to generate these identifiers resets back to 0 to reboot and the identifiers
+    /// are reused.
     pub id: u32,
+    /// The amount of instructions that were JIT-ed.
+    ///
+    /// This is useful when attempting to dump the JIT code of the program to
+    /// pre-allocate the needed memory to write the instructions to.
     pub jited_prog_len: u32,
+    /// The amount of instructions that were interpreted (post-translation by the verifier)
+    ///
+    /// This is useful when attempting to dump the xlated code of the program to
+    /// pre-allocate the needed memory to write the instructions to.
     pub xlated_prog_len: u32,
+    // TODO: Should be a Rust pointer
+    /// A u64-encoded pointer to the memory region containing JIT-ed instructions.
     pub jited_prog_insns: u64,
+    // TODO: Should be a Rust pointer
+    /// A u64-encoded pointer to the memory region contained Xlated instructions.
     pub xlated_prog_insns: u64,
     pub load_time: Duration,
+    /// User id of the creator of the program
     pub created_by_uid: u32,
+    /// The count of maps currently used by the program
     pub nr_map_ids: u32,
+    // TODO: Should be a Rust pointer
+    /// A u64-encoded pointer to the memory region containing ids to maps used by the program.
     pub map_ids: u64,
     pub ifindex: u32,
+    /// If the eBPF program has a GPL compatible license
+    ///
+    /// If the eBPF program has a proprietary license, then some features such
+    /// as helper functions or even ability to create certain program types are not
+    /// available.
+    ///
+    /// For more information, see the [kernel docs](https://www.kernel.org/doc/html/latest/bpf/bpf_licensing.html).
     pub gpl_compatible: bool,
     pub netns_dev: u64,
     pub netns_ino: u64,
