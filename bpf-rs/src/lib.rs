@@ -1,5 +1,5 @@
-// TODO: enable #![warn(missing_docs)]
-// TODO: enable #![warn(missing_doc_code_examples)]
+// DOCS: enable #![warn(missing_docs)]
+// DOCS: enable #![warn(missing_doc_code_examples)]
 //! `bpf-rs` is a safe, lean library for inspecting and querying eBPF objects. A lot of the
 //! design & inspiration stems from [bpftool](https://github.com/libbpf/bpftool) internals and
 //! [libbpf-rs](https://docs.rs/libbpf-rs).
@@ -13,20 +13,15 @@
 //!
 pub mod insns;
 
+use bpf_rs_macros::Display;
+#[cfg(feature = "serde")]
+use bpf_rs_macros::Serialize;
 use libbpf_sys::{
     _bpf_helper_func_names, libbpf_probe_bpf_helper, libbpf_probe_bpf_map_type,
     libbpf_probe_bpf_prog_type, __BPF_FUNC_MAX_ID,
 };
 use num_enum::{IntoPrimitive, TryFromPrimitive};
-#[cfg(feature = "serde")]
-use serde::Serialize;
-use std::{
-    ffi::CStr,
-    fmt::{Debug, Display},
-    os::raw,
-    ptr,
-    time::Duration,
-};
+use std::{ffi::CStr, fmt::Debug, os::raw, ptr, time::Duration};
 use thiserror::Error as ThisError;
 
 pub use libbpf_sys;
@@ -41,11 +36,15 @@ pub enum Error {
     Unknown(i32),
 }
 
+trait StaticName {
+    fn name(&self) -> &'static str;
+}
+
 /// eBPF program type variants. Based off of [kernel header's](https://github.com/torvalds/linux/blob/b253435746d9a4a701b5f09211b9c14d3370d0da/include/uapi/linux/bpf.h#L922)
 /// `enum bpf_prog_type`
 #[non_exhaustive]
 #[repr(u32)]
-#[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Display, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum ProgramType {
     Unspec = 0,
@@ -83,46 +82,6 @@ pub enum ProgramType {
 }
 
 impl ProgramType {
-    /// Based off of bpftool's
-    /// [`prog_type_name`](https://github.com/libbpf/bpftool/blob/9443d42430017ed2d04d7ab411131525ced62d6a/src/prog.c#L39),
-    /// returns a human-readable name of the eBPF program type.
-    pub fn name(&self) -> &'static str {
-        match *self {
-            ProgramType::Unspec => "unspec",
-            ProgramType::SocketFilter => "socket_filter",
-            ProgramType::Kprobe => "kprobe",
-            ProgramType::SchedCls => "sched_cls",
-            ProgramType::SchedAct => "sched_act",
-            ProgramType::Tracepoint => "tracepoint",
-            ProgramType::Xdp => "xdp",
-            ProgramType::PerfEvent => "perf_event",
-            ProgramType::CgroupSkb => "cgroup_skb",
-            ProgramType::CgroupSock => "cgroup_sock",
-            ProgramType::LwtIn => "lwt_in",
-            ProgramType::LwtOut => "lwt_out",
-            ProgramType::LwtXmit => "lwt_xmit",
-            ProgramType::SockOps => "sock_ops",
-            ProgramType::SkSkb => "sk_skb",
-            ProgramType::CgroupDevice => "cgroup_device",
-            ProgramType::SkMsg => "sk_msg",
-            ProgramType::RawTracepoint => "raw_tracepoint",
-            ProgramType::CgroupSockAddr => "cgroup_sock_addr",
-            ProgramType::LwtSeg6local => "lwt_seg6local",
-            ProgramType::LircMode2 => "lirc_mode2",
-            ProgramType::SkReuseport => "sk_reuseport",
-            ProgramType::FlowDissector => "flow_dissector",
-            ProgramType::CgroupSysctl => "cgroup_sysctl",
-            ProgramType::RawTracepointWritable => "raw_tracepoint_writable",
-            ProgramType::CgroupSockopt => "cgroup_sockopt",
-            ProgramType::Tracing => "tracing",
-            ProgramType::StructOps => "struct_ops",
-            ProgramType::Ext => "ext",
-            ProgramType::Lsm => "lsm",
-            ProgramType::SkLookup => "sk_lookup",
-            ProgramType::Syscall => "syscall",
-        }
-    }
-
     /// Determines if the eBPF program type is supported on the current platform
     pub fn probe(&self) -> Result<bool, Error> {
         match unsafe { libbpf_probe_bpf_prog_type((*self).into(), ptr::null()) } {
@@ -158,9 +117,45 @@ impl ProgramType {
     }
 }
 
-impl Display for ProgramType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.name())
+impl StaticName for ProgramType {
+    /// Based off of bpftool's
+    /// [`prog_type_name`](https://github.com/libbpf/bpftool/blob/9443d42430017ed2d04d7ab411131525ced62d6a/src/prog.c#L39),
+    /// returns a human-readable name of the eBPF program type.
+    fn name(&self) -> &'static str {
+        match *self {
+            ProgramType::Unspec => "unspec",
+            ProgramType::SocketFilter => "socket_filter",
+            ProgramType::Kprobe => "kprobe",
+            ProgramType::SchedCls => "sched_cls",
+            ProgramType::SchedAct => "sched_act",
+            ProgramType::Tracepoint => "tracepoint",
+            ProgramType::Xdp => "xdp",
+            ProgramType::PerfEvent => "perf_event",
+            ProgramType::CgroupSkb => "cgroup_skb",
+            ProgramType::CgroupSock => "cgroup_sock",
+            ProgramType::LwtIn => "lwt_in",
+            ProgramType::LwtOut => "lwt_out",
+            ProgramType::LwtXmit => "lwt_xmit",
+            ProgramType::SockOps => "sock_ops",
+            ProgramType::SkSkb => "sk_skb",
+            ProgramType::CgroupDevice => "cgroup_device",
+            ProgramType::SkMsg => "sk_msg",
+            ProgramType::RawTracepoint => "raw_tracepoint",
+            ProgramType::CgroupSockAddr => "cgroup_sock_addr",
+            ProgramType::LwtSeg6local => "lwt_seg6local",
+            ProgramType::LircMode2 => "lirc_mode2",
+            ProgramType::SkReuseport => "sk_reuseport",
+            ProgramType::FlowDissector => "flow_dissector",
+            ProgramType::CgroupSysctl => "cgroup_sysctl",
+            ProgramType::RawTracepointWritable => "raw_tracepoint_writable",
+            ProgramType::CgroupSockopt => "cgroup_sockopt",
+            ProgramType::Tracing => "tracing",
+            ProgramType::StructOps => "struct_ops",
+            ProgramType::Ext => "ext",
+            ProgramType::Lsm => "lsm",
+            ProgramType::SkLookup => "sk_lookup",
+            ProgramType::Syscall => "syscall",
+        }
     }
 }
 
@@ -291,7 +286,7 @@ impl ProgramLicense {
 /// `enum bpf_map_type`
 #[non_exhaustive]
 #[repr(u32)]
-#[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Display, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum MapType {
     Unspec = 0,
@@ -328,10 +323,31 @@ pub enum MapType {
 }
 
 impl MapType {
+    /// Determines if the eBPF map type is supported on the current platform
+    pub fn probe(&self) -> Result<bool, Error> {
+        match unsafe { libbpf_probe_bpf_map_type((*self).into(), ptr::null()) } {
+            negative if negative < 0 => Err(Error::Code(negative)),
+            0 => Ok(false),
+            1 => Ok(true),
+            positive if positive > 1 => Err(Error::Unknown(positive)),
+            _ => unreachable!(),
+        }
+    }
+
+    /// Returns an ordered iterator over the MapType variants. The order is determined by the kernel
+    /// header's [enum values](https://github.com/torvalds/linux/blob/b253435746d9a4a701b5f09211b9c14d3370d0da/include/uapi/linux/bpf.h#L880).
+    ///
+    /// **Note**: Skips [`MapType::Unspec`] since it's an invalid map type
+    pub fn iter() -> impl Iterator<Item = MapType> {
+        MapTypeIter(1)
+    }
+}
+
+impl StaticName for MapType {
     /// Based off of bpftool's
     /// [`map_type_name`](https://github.com/libbpf/bpftool/blob/9443d42430017ed2d04d7ab411131525ced62d6a/src/map.c#L25),
     /// returns a human-readable name of the eBPF map type.
-    pub fn name(&self) -> &'static str {
+    fn name(&self) -> &'static str {
         match *self {
             MapType::Unspec => "unspec",
             MapType::Hash => "hash",
@@ -366,31 +382,6 @@ impl MapType {
             MapType::BloomFilter => "bloom_filter",
         }
     }
-
-    /// Determines if the eBPF map type is supported on the current platform
-    pub fn probe(&self) -> Result<bool, Error> {
-        match unsafe { libbpf_probe_bpf_map_type((*self).into(), ptr::null()) } {
-            negative if negative < 0 => Err(Error::Code(negative)),
-            0 => Ok(false),
-            1 => Ok(true),
-            positive if positive > 1 => Err(Error::Unknown(positive)),
-            _ => unreachable!(),
-        }
-    }
-
-    /// Returns an ordered iterator over the MapType variants. The order is determined by the kernel
-    /// header's [enum values](https://github.com/torvalds/linux/blob/b253435746d9a4a701b5f09211b9c14d3370d0da/include/uapi/linux/bpf.h#L880).
-    ///
-    /// **Note**: Skips [`MapType::Unspec`] since it's an invalid map type
-    pub fn iter() -> impl Iterator<Item = MapType> {
-        MapTypeIter(1)
-    }
-}
-
-impl Display for MapType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.name())
-    }
 }
 
 struct MapTypeIter(u32);
@@ -418,18 +409,18 @@ impl Iterator for MapTypeIter {
 ///
 /// For more information on eBPF helper functions, check out (although slightly outdated)
 /// [Marsden's Oracle blog post](https://blogs.oracle.com/linux/post/bpf-in-depth-bpf-helper-functions).
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Display, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct BpfHelper(pub u32);
 
-impl BpfHelper {
+impl StaticName for BpfHelper {
     /// Human-readable name for an eBPF helper function
     ///
     /// In the kernel, eBPF helper functions are usually represented as an int. This tries to create
     /// a digestable name for the helper functions but will return `<unknown>` or `<utf8err>` if not
     /// possible. For example, in the case that [`BpfHelper::0`] is outside the
     /// `__BPF_FUNC_MAX_ID` limit.
-    pub fn name(&self) -> &'static str {
+    fn name(&self) -> &'static str {
         match usize::try_from(self.0) {
             Ok(func_idx) => {
                 if func_idx >= unsafe { _bpf_helper_func_names.len() } {
@@ -442,12 +433,6 @@ impl BpfHelper {
             }
             Err(_) => "<unknown>",
         }
-    }
-}
-
-impl Display for BpfHelper {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.name())
     }
 }
 

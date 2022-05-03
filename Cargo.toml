@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
-    "bpf-feature",
+    "bpf-rs-macros",
     "bpf-rs",
+    "bpf-feature",
 ]

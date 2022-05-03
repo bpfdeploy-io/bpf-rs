@@ -110,7 +110,7 @@ fn main() {
                                 println!("\tCould not determine which helpers are available");
                             } else {
                                 successes.iter().for_each(|&helper| {
-                                    println!("\t- {}", helper.as_ref().unwrap().name());
+                                    println!("\t- {}", helper.as_ref().unwrap());
                                 });
                             }
                         }
