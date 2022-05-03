@@ -16,10 +16,7 @@ use nix::{
     unistd,
 };
 #[cfg(feature = "serde")]
-use serde::{
-    ser::SerializeStruct,
-    Serialize,
-};
+use serde::{ser::SerializeStruct, Serialize};
 use std::{
     collections::HashMap,
     fmt::Display,
@@ -32,7 +29,7 @@ use thiserror::Error as ThisError;
 
 #[cfg(feature = "serde")]
 mod serde_utils {
-    use serde::ser::SerializeSeq;
+    use serde::ser::{SerializeMap, SerializeSeq};
     use std::collections::HashMap;
 
     pub fn flatten_result<S, T, E>(result: &Result<T, E>, serializer: S) -> Result<S::Ok, S::Error>
@@ -47,7 +44,7 @@ mod serde_utils {
         }
     }
 
-    pub fn filter_list<S, K, E>(
+    pub fn to_list<S, K, E>(
         map: &HashMap<K, Result<bool, E>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error>
@@ -66,7 +63,31 @@ mod serde_utils {
         }
         seq.end()
     }
+
+    pub fn to_list_inner<S, K, H, E>(
+        map: &HashMap<K, Vec<Result<H, E>>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+        K: serde::ser::Serialize,
+        H: serde::ser::Serialize,
+    {
+        let mut seq = serializer.serialize_map(None)?;
+        for (k, v) in map.iter() {
+            let ok_items: Vec<_> = v
+                .iter()
+                .filter_map(|r| match r {
+                    Ok(h) => Some(h),
+                    Err(_) => None,
+                })
+                .collect();
+            seq.serialize_entry(k, &ok_items)?
+        }
+        seq.end()
+    }
 }
+
 #[derive(ThisError, Debug)]
 pub enum DetectError {
     #[error("failed to access capabilities")]
@@ -311,10 +332,14 @@ pub enum BpfError {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Bpf {
     pub has_bpf_syscall: bool,
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_utils::filter_list"))]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_utils::to_list"))]
     pub program_types: HashMap<ProgramType, Result<bool, BpfError>>,
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_utils::filter_list"))]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_utils::to_list"))]
     pub map_types: HashMap<MapType, Result<bool, BpfError>>,
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serde_utils::to_list_inner")
+    )]
     pub helpers: HashMap<ProgramType, Vec<Result<BpfHelper, BpfError>>>,
 }
 
