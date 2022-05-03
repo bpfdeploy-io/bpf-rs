@@ -218,10 +218,10 @@ pub struct ProgramInfo {
     /// This is useful when attempting to dump the xlated code of the program to
     /// pre-allocate the needed memory to write the instructions to.
     pub xlated_prog_len: u32,
-    // TODO: Should be a Rust pointer
+    // REFACTOR: Should be a Rust pointer
     /// A u64-encoded pointer to the memory region containing JIT-ed instructions.
     pub jited_prog_insns: u64,
-    // TODO: Should be a Rust pointer
+    // REFACTOR: Should be a Rust pointer
     /// A u64-encoded pointer to the memory region contained Xlated instructions.
     pub xlated_prog_insns: u64,
     pub load_time: Duration,

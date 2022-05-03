@@ -18,6 +18,7 @@ pub struct ProgramInfo {
 }
 
 impl ProgramInfo {
+    // REFACTOR: Move this into bpf-rs
     fn from_raw(raw: bpf_prog_info) -> Self {
         let raw_name = &raw.name;
         let c = raw_name
