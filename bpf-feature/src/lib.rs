@@ -28,66 +28,7 @@ use std::{
 use thiserror::Error as ThisError;
 
 #[cfg(feature = "serde")]
-mod serde_utils {
-    use serde::{
-        ser::{Serialize, SerializeMap, SerializeSeq},
-        Serializer,
-    };
-    use std::collections::HashMap;
-
-    pub fn flatten_result<S>(
-        result: &Result<impl Serialize, impl Serialize>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match result {
-            Ok(t) => t.serialize(serializer),
-            Err(e) => e.serialize(serializer),
-        }
-    }
-
-    pub fn to_list<S, E>(
-        map: &HashMap<impl Serialize, Result<bool, E>>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut seq = serializer.serialize_seq(None)?;
-        for (k, v) in map.iter() {
-            match v {
-                Ok(true) => {
-                    seq.serialize_element(k)?;
-                }
-                _ => {}
-            };
-        }
-        seq.end()
-    }
-
-    pub fn to_list_inner<S, E>(
-        map: &HashMap<impl Serialize, Vec<Result<impl Serialize, E>>>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut seq = serializer.serialize_map(None)?;
-        for (k, v) in map.iter() {
-            let ok_items: Vec<_> = v
-                .iter()
-                .filter_map(|r| match r {
-                    Ok(h) => Some(h),
-                    Err(_) => None,
-                })
-                .collect();
-            seq.serialize_entry(k, &ok_items)?
-        }
-        seq.end()
-    }
-}
+mod serde_ext;
 
 #[derive(ThisError, Debug)]
 pub enum DetectError {
@@ -131,8 +72,9 @@ impl Display for ConfigValue {
 impl Serialize for ConfigValue {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer {
-            serializer.collect_str(self)
+        S: serde::Serializer,
+    {
+        serializer.collect_str(self)
     }
 }
 
@@ -269,30 +211,15 @@ type ProcfsResult = Result<usize, RuntimeError>;
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Runtime {
-    #[cfg_attr(
-        feature = "serde",
-        serde(serialize_with = "serde_utils::flatten_result")
-    )]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_ext::flatten_result"))]
     pub unprivileged_disabled: ProcfsResult,
-    #[cfg_attr(
-        feature = "serde",
-        serde(serialize_with = "serde_utils::flatten_result")
-    )]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_ext::flatten_result"))]
     pub jit_enable: ProcfsResult,
-    #[cfg_attr(
-        feature = "serde",
-        serde(serialize_with = "serde_utils::flatten_result")
-    )]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_ext::flatten_result"))]
     pub jit_harden: ProcfsResult,
-    #[cfg_attr(
-        feature = "serde",
-        serde(serialize_with = "serde_utils::flatten_result")
-    )]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_ext::flatten_result"))]
     pub jit_kallsyms: ProcfsResult,
-    #[cfg_attr(
-        feature = "serde",
-        serde(serialize_with = "serde_utils::flatten_result")
-    )]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_ext::flatten_result"))]
     pub jit_limit: ProcfsResult,
 }
 
@@ -341,14 +268,11 @@ pub enum BpfError {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Bpf {
     pub has_bpf_syscall: bool,
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_utils::to_list"))]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_ext::to_list"))]
     pub program_types: HashMap<ProgramType, Result<bool, BpfError>>,
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_utils::to_list"))]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_ext::to_list"))]
     pub map_types: HashMap<MapType, Result<bool, BpfError>>,
-    #[cfg_attr(
-        feature = "serde",
-        serde(serialize_with = "serde_utils::to_list_inner")
-    )]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_ext::to_list_inner"))]
     pub helpers: HashMap<ProgramType, Vec<Result<BpfHelper, BpfError>>>,
 }
 
@@ -533,20 +457,11 @@ impl Misc {
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Features {
-    #[cfg_attr(
-        feature = "serde",
-        serde(serialize_with = "serde_utils::flatten_result")
-    )]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_ext::flatten_result"))]
     pub runtime: Result<Runtime, RuntimeError>,
-    #[cfg_attr(
-        feature = "serde",
-        serde(serialize_with = "serde_utils::flatten_result")
-    )]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_ext::flatten_result"))]
     pub kernel_config: Result<KernelConfig, KernelConfigError>,
-    #[cfg_attr(
-        feature = "serde",
-        serde(serialize_with = "serde_utils::flatten_result")
-    )]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serde_ext::flatten_result"))]
     pub bpf: Result<Bpf, BpfError>,
     pub misc: Misc,
 }
