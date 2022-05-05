@@ -1,21 +1,16 @@
 use bpf_rs::libbpf_sys::{
-    bpf_insn, bpf_prog_load, BPF_FUNC_probe_write_user, BPF_FUNC_trace_printk,
-    BPF_FUNC_trace_vprintk, BPF_MAXINSNS,
+    bpf_prog_load, BPF_FUNC_probe_write_user, BPF_FUNC_trace_printk, BPF_FUNC_trace_vprintk,
 };
-use bpf_rs::{
-    insns::{alu64_imm, exit, jmp32_imm, jmp_imm, mov64_imm, AluOp, JmpOp, Register},
-    BpfHelper, BpfHelperIter, Error as BpfSysError, MapType, ProgramLicense, ProgramType,
-};
+use bpf_rs::{BpfHelper, BpfHelperIter, Error as BpfSysError, MapType, ProgramType};
 #[cfg(feature = "serde")]
 use bpf_rs_macros::SerializeFromDisplay;
 use flate2::bufread::GzDecoder;
 use nix::{
-    errno::{errno, Errno},
+    errno::Errno,
     sys::{
         statfs::{statfs, PROC_SUPER_MAGIC},
         utsname,
     },
-    unistd,
 };
 #[cfg(feature = "serde")]
 use serde::Serialize;
@@ -28,6 +23,8 @@ use std::{
     ptr,
 };
 use thiserror::Error as ThisError;
+
+pub mod misc;
 
 #[cfg(feature = "serde")]
 mod serde_ext;
@@ -372,85 +369,6 @@ impl Bpf {
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
-pub struct Misc {
-    pub large_insn_limit: bool,
-    pub bounded_loops: bool,
-    pub isa_v2_ext: bool,
-    pub isa_v3_ext: bool,
-}
-
-impl Misc {
-    pub fn features() -> Misc {
-        Misc {
-            large_insn_limit: Self::probe_large_insn_limit(),
-            bounded_loops: Self::probe_bounded_loops(),
-            isa_v2_ext: Self::probe_isa_v2(),
-            isa_v3_ext: Self::probe_isa_v3(),
-        }
-    }
-
-    fn load_insns(insns: Vec<bpf_insn>) -> bool {
-        Errno::clear();
-        let fd = unsafe {
-            bpf_prog_load(
-                ProgramType::SocketFilter.into(),
-                ptr::null(),
-                ProgramLicense::GPL.as_ptr(),
-                insns.as_ptr(),
-                u64::try_from(insns.len()).unwrap_or(0u64),
-                ptr::null(),
-            )
-        };
-
-        let success = fd >= 0 || errno() == 0;
-
-        if fd >= 0 {
-            let _ = unistd::close(fd);
-        }
-
-        success
-    }
-
-    fn probe_large_insn_limit() -> bool {
-        let max_insns = usize::try_from(BPF_MAXINSNS).unwrap();
-        let mut large_insn_prog = vec![mov64_imm(Register::R0, 1); max_insns + 1];
-        large_insn_prog[max_insns] = exit();
-        Self::load_insns(large_insn_prog)
-    }
-
-    fn probe_bounded_loops() -> bool {
-        let insns = vec![
-            mov64_imm(Register::R0, 10),
-            alu64_imm(AluOp::SUB, Register::R0, 1),
-            jmp_imm(JmpOp::JNE, Register::R0, 0, -2),
-            exit(),
-        ];
-        Self::load_insns(insns)
-    }
-
-    fn probe_isa_v2() -> bool {
-        let insns = vec![
-            mov64_imm(Register::R0, 0),
-            jmp_imm(JmpOp::JLT, Register::R0, 0, 1),
-            mov64_imm(Register::R0, 1),
-            exit(),
-        ];
-        Self::load_insns(insns)
-    }
-
-    fn probe_isa_v3() -> bool {
-        let insns = vec![
-            mov64_imm(Register::R0, 0),
-            jmp32_imm(JmpOp::JLT, Register::R0, 0, 1),
-            mov64_imm(Register::R0, 1),
-            exit(),
-        ];
-        Self::load_insns(insns)
-    }
-}
-
-#[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Features {
     #[cfg_attr(feature = "serde", serde(serialize_with = "serde_ext::flatten_result"))]
     pub runtime: Result<Runtime, RuntimeError>,
@@ -458,7 +376,7 @@ pub struct Features {
     pub kernel_config: Result<KernelConfig, KernelConfigError>,
     #[cfg_attr(feature = "serde", serde(serialize_with = "serde_ext::flatten_result"))]
     pub bpf: Result<Bpf, BpfError>,
-    pub misc: Misc,
+    pub misc: misc::Misc,
 }
 
 pub struct DetectOpts {
@@ -499,7 +417,7 @@ pub fn detect(opts: DetectOpts) -> Result<Features, DetectError> {
         bpf: Bpf::features(BpfFeaturesOpts {
             full_helpers: opts.full_helpers,
         }),
-        misc: Misc::features(),
+        misc: misc::features(),
     })
 }
 

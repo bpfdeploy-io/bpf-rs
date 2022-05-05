@@ -1,4 +1,4 @@
-use bpf_feature::{detect, BpfError, DetectOpts, KernelConfig, Misc, KERNEL_CONFIG_KEYS};
+use bpf_feature::{detect, BpfError, DetectOpts, KernelConfig, misc::Misc, KERNEL_CONFIG_KEYS};
 use bpf_rs::{BpfHelper, MapType, ProgramType};
 
 fn main() {
