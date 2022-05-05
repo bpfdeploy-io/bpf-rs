@@ -1,5 +1,9 @@
 use bpf_feature::{
-    bpf::BpfError, detect, misc::Misc, DetectOpts, KernelConfig, KERNEL_CONFIG_KEYS,
+    bpf::BpfError,
+    detect,
+    kernel_config::{KernelConfig, KERNEL_CONFIG_KEYS},
+    misc::Misc,
+    DetectOpts,
 };
 use bpf_rs::{BpfHelper, MapType, ProgramType};
 
