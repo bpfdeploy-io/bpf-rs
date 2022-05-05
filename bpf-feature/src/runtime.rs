@@ -14,9 +14,9 @@ use serde::Serialize;
 pub enum RuntimeError {
     #[error("procfs at /proc was not detected")]
     ProcfsNonExistent,
-    #[error("std::num::ParseIntError: {0}")]
+    #[error("parse failure: {0}")]
     ParseIntError(#[from] std::num::ParseIntError),
-    #[error("std::io::Error: {0}")]
+    #[error("io: {0}")]
     IO(#[from] std::io::Error),
 }
 

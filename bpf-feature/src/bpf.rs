@@ -1,4 +1,3 @@
-use crate::serde_ext;
 use bpf_rs::libbpf_sys::{
     bpf_prog_load, BPF_FUNC_probe_write_user, BPF_FUNC_trace_printk, BPF_FUNC_trace_vprintk,
 };
@@ -9,10 +8,11 @@ use std::ptr;
 use thiserror::Error as ThisError;
 
 #[cfg(feature = "serde")]
-use serde::Serialize;
-
+use crate::serde_ext;
 #[cfg(feature = "serde")]
 use bpf_rs_macros::SerializeFromDisplay;
+#[cfg(feature = "serde")]
+use serde::Serialize;
 
 #[derive(ThisError, Debug)]
 #[cfg_attr(feature = "serde", derive(SerializeFromDisplay))]

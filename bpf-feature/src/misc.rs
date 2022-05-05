@@ -7,8 +7,10 @@ use nix::{
     errno::{errno, Errno},
     unistd,
 };
-use serde::Serialize;
 use std::ptr;
+
+#[cfg(feature="serde")]
+use serde::Serialize;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
