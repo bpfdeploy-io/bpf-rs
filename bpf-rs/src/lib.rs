@@ -15,7 +15,7 @@ pub mod insns;
 
 use bpf_rs_macros::Display;
 #[cfg(feature = "serde")]
-use bpf_rs_macros::Serialize;
+use bpf_rs_macros::SerializeFromDisplay;
 use libbpf_sys::{
     _bpf_helper_func_names, libbpf_probe_bpf_helper, libbpf_probe_bpf_map_type,
     libbpf_probe_bpf_prog_type, __BPF_FUNC_MAX_ID,
@@ -45,7 +45,7 @@ trait StaticName {
 #[non_exhaustive]
 #[repr(u32)]
 #[derive(Debug, Display, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(feature = "serde", derive(SerializeFromDisplay))]
 pub enum ProgramType {
     Unspec = 0,
     SocketFilter,
@@ -287,7 +287,7 @@ impl ProgramLicense {
 #[non_exhaustive]
 #[repr(u32)]
 #[derive(Debug, Display, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(feature = "serde", derive(SerializeFromDisplay))]
 pub enum MapType {
     Unspec = 0,
     Hash,
@@ -410,7 +410,7 @@ impl Iterator for MapTypeIter {
 /// For more information on eBPF helper functions, check out (although slightly outdated)
 /// [Marsden's Oracle blog post](https://blogs.oracle.com/linux/post/bpf-in-depth-bpf-helper-functions).
 #[derive(Display, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(feature = "serde", derive(SerializeFromDisplay))]
 pub struct BpfHelper(pub u32);
 
 impl StaticName for BpfHelper {

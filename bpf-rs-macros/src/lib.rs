@@ -28,25 +28,24 @@ pub fn derive_display_trait(input: TokenStream) -> TokenStream {
 
 // TESTME:
 #[cfg(feature = "serde")]
-#[proc_macro_derive(Serialize)]
-pub fn derive_serialize_trait(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(SerializeFromDisplay)]
+pub fn derive_serialize_from_display_trait(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = input.ident;
 
     let expanded = quote! {
         const _: () = {
-            fn assert_static_name<T: StaticName>() {}
+            fn assert_display<T: ::std::fmt::Display>() {}
             fn assert_traits() {
-                assert_static_name::<#name>();
+                assert_display::<#name>();
             }
         };
-
         impl serde::ser::Serialize for #name {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where
                 S: serde::Serializer,
             {
-                serializer.serialize_str(self.name())
+                serializer.collect_str(self)
             }
         }
     };
