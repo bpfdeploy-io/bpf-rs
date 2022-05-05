@@ -109,7 +109,6 @@ pub enum KernelConfigError {
 }
 
 #[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum ConfigValue {
     Y,
     N,
@@ -125,6 +124,15 @@ impl Display for ConfigValue {
             ConfigValue::M => write!(f, "m"),
             ConfigValue::Other(value) => write!(f, "{}", value),
         }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for ConfigValue {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer {
+            serializer.collect_str(self)
     }
 }
 
