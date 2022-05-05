@@ -25,6 +25,7 @@ name = "bpf-feature"
 version = "0.1.0"
 dependencies = [
  "bpf-rs",
+ "bpf-rs-macros",
  "caps",
  "flate2",
  "nix",

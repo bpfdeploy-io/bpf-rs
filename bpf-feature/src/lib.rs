@@ -6,6 +6,8 @@ use bpf_rs::{
     insns::{alu64_imm, exit, jmp32_imm, jmp_imm, mov64_imm, AluOp, JmpOp, Register},
     BpfHelper, BpfHelperIter, Error as BpfSysError, MapType, ProgramLicense, ProgramType,
 };
+#[cfg(feature = "serde")]
+use bpf_rs_macros::SerializeFromDisplay;
 use flate2::bufread::GzDecoder;
 use nix::{
     errno::{errno, Errno},
@@ -16,7 +18,7 @@ use nix::{
     unistd,
 };
 #[cfg(feature = "serde")]
-use serde::{ser::SerializeStruct, Serialize};
+use serde::Serialize;
 use std::{
     collections::HashMap,
     fmt::Display,
@@ -50,6 +52,7 @@ pub enum KernelConfigError {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(SerializeFromDisplay))]
 pub enum ConfigValue {
     Y,
     N,
@@ -65,16 +68,6 @@ impl Display for ConfigValue {
             ConfigValue::M => write!(f, "m"),
             ConfigValue::Other(value) => write!(f, "{}", value),
         }
-    }
-}
-
-#[cfg(feature = "serde")]
-impl Serialize for ConfigValue {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.collect_str(self)
     }
 }
 
@@ -197,6 +190,7 @@ impl KernelConfig {
 }
 
 #[derive(ThisError, Debug)]
+#[cfg_attr(feature = "serde", derive(SerializeFromDisplay))]
 pub enum RuntimeError {
     #[error("procfs at /proc was not detected")]
     ProcfsNonExistent,
@@ -257,6 +251,7 @@ impl Runtime {
 }
 
 #[derive(ThisError, Debug)]
+#[cfg_attr(feature = "serde", derive(SerializeFromDisplay))]
 pub enum BpfError {
     #[error("no bpf syscall on system")]
     NoBpfSyscall,
