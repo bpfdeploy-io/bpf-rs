@@ -98,8 +98,8 @@ impl KernelConfig {
         let config_reader: Box<dyn BufRead> =
             match File::open(format!("/boot/config-{}", utsn.release())) {
                 Err(_) => {
-                    let compressed_config = File::open("/proc/config.gz")
-                        .map_err(|_| KernelConfigError::NotFound)?;
+                    let compressed_config =
+                        File::open("/proc/config.gz").map_err(|_| KernelConfigError::NotFound)?;
                     let decoder = GzDecoder::new(BufReader::new(compressed_config));
                     Box::new(BufReader::new(decoder))
                 }

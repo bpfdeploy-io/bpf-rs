@@ -8,13 +8,7 @@ use bpf_feature::{
 use bpf_rs::{BpfHelper, MapType, ProgramType};
 
 fn main() {
-    let features = match detect(DetectOpts::default()) {
-        Ok(features) => features,
-        Err(err) => {
-            println!("Error fetching features: {}", err);
-            return;
-        }
-    };
+    let features = detect(DetectOpts::default());
 
     println!("Scanning system configuration...");
     match features.runtime {
