@@ -410,26 +410,34 @@ impl Bpf {
     fn probe_helpers(full: bool) -> HashMap<ProgramType, Vec<Result<BpfHelper, BpfError>>> {
         ProgramType::iter()
             .map(|program_type| {
-                let helpers = BpfHelperIter::new()
-                    .filter_map(|helper| {
-                        if !full {
-                            #[allow(non_upper_case_globals)]
-                            match helper.0 {
-                                BPF_FUNC_trace_printk
-                                | BPF_FUNC_trace_vprintk
-                                | BPF_FUNC_probe_write_user => return None,
-                                _ => {}
-                            };
-                        }
+                // NOTE: Due to libbpf's `libbpf_probe_bpf_helper` implementation, it may return true
+                // for helpers of **unsupported** program types so the user is forced to check
+                // against this before probing for helper support.
+                match program_type.probe() {
+                    Ok(true) => {
+                        let helpers = BpfHelperIter::new()
+                            .filter_map(|helper| {
+                                if !full {
+                                    #[allow(non_upper_case_globals)]
+                                    match helper.0 {
+                                        BPF_FUNC_trace_printk
+                                        | BPF_FUNC_trace_vprintk
+                                        | BPF_FUNC_probe_write_user => return None,
+                                        _ => {}
+                                    };
+                                }
 
-                        match program_type.probe_helper(helper) {
-                            Ok(true) => Some(Ok(helper)),
-                            Ok(false) => None,
-                            Err(err) => Some(Err(BpfError::ProbeErr(err))),
-                        }
-                    })
-                    .collect();
-                (program_type, helpers)
+                                match program_type.probe_helper(helper) {
+                                    Ok(true) => Some(Ok(helper)),
+                                    Ok(false) => None,
+                                    Err(err) => Some(Err(BpfError::ProbeErr(err))),
+                                }
+                            })
+                            .collect();
+                        (program_type, helpers)
+                    }
+                    Ok(false) | Err(_) => (program_type, vec![]),
+                }
             })
             .collect()
     }
