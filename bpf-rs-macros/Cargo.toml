@@ -1,7 +1,12 @@
 [package]
 name = "bpf-rs-macros"
-version = "0.0.0"
+version = "0.0.1"
 edition = "2021"
+homepage = "https://bpfdeploy.io"
+description = "Collection of proc macros used within `bpf-rs` and dependant crates."
+keywords = ["bpf", "ebpf"]
+license = "BSD-2-Clause"
+authors = ["Milan <milan@mdaverde.com>"]
 
 [lib]
 proc-macro = true

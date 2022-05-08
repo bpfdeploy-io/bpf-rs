@@ -16,7 +16,7 @@ num_enum = "0.5.7"
 thiserror = "1.0.30"
 libbpf-sys = { version = "0.7.1", package = "bpfdeploy-libbpf-sys" }
 serde = { version = "1.0.136", optional = true, features = ["derive"] }
-bpf-rs-macros = { version = "0.0.0", path = "../bpf-rs-macros" }
+bpf-rs-macros = { version = "0.0.1", path = "../bpf-rs-macros" }
 
 [features]
 serde = ["dep:serde", "bpf-rs-macros/serde"]
