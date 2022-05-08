@@ -25,6 +25,9 @@
 //! To see an example of JSON out, see the example
 //! [`examples/json-dump.rs`](https://github.com/bpfdeploy-io/bpf-rs/tree/main/bpf-feature/examples).
 //!
+//! Serialization support is **NOT** enabled by default. Please pass in the `serde`
+//! feature to enable.
+//!
 //! ## Other serialization formats
 //!
 //! Because of the abstraction Serde provides, we are not restricted to JSON and it
