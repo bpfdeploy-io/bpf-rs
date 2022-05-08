@@ -1,6 +1,6 @@
 [package]
 name = "bpf-rs"
-version = "0.0.7"
+version = "0.0.8"
 edition = "2021"
 homepage = "https://bpfdeploy.io"
 description = "A safe, lean library for inspecting and querying eBPF objects"
@@ -8,8 +8,6 @@ keywords = ["bpf", "ebpf"]
 readme = "README.md"
 license = "BSD-2-Clause"
 authors = ["Milan <milan@mdaverde.com>"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 num_enum = "0.5.7"
