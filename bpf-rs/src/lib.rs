@@ -36,6 +36,7 @@ pub enum Error {
     Unknown(i32),
 }
 
+// Highly coupled to the proc macro bpf_rs_macros::Derive
 trait StaticName {
     fn name(&self) -> &'static str;
 }

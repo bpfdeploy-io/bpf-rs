@@ -49,6 +49,7 @@ name = "bpf-rs-macros"
 version = "0.0.1"
 dependencies = [
  "quote",
+ "serde",
  "syn",
 ]
 
