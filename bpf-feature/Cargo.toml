@@ -12,8 +12,8 @@ authors = ["Milan <milan@mdaverde.com>", "bpfdeploy.io <team@bpfdeploy.io>"]
 flate2 = "1.0.22"
 nix = "0.23.1"
 thiserror = "1.0.30"
-bpf-rs = { path = "../bpf-rs" }
 serde = { version = "1.0.136", optional = true, features = ["derive"] }
+bpf-rs = { version = "0.0.8", path = "../bpf-rs" }
 bpf-rs-macros = { version = "0.0.1", path = "../bpf-rs-macros" }
 
 [dev-dependencies]
