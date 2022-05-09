@@ -26,9 +26,10 @@ An eBPF feature detection library based on [bpftool](https://github.com/libbpf/b
 
 Clients can determine available bpf features (such as program & map types, kernel config values, bpf helper functions etc.) supported in their current kernels.
 
-Example: [feature-probe.rs](./bpf-feature/examples/feature-probe.rs)
+See [documentation here](https://docs.rs/bpf-feature/).
 
-See [documentation here](https://docs.rs/bpf-feature/)
+### Example: [feature-probe.rs](./bpf-feature/examples/feature-probe.rs)
+
 
 ## [bpf-obj-dump](./bpf-obj-dump/)
 

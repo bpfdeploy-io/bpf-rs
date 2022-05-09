@@ -1,7 +1,7 @@
 <div align="center">
   <h1>bpf-rs</h1>
     <p>
-      A safe, lean library for inspecting and querying eBPF objects.
+      A safe, flexible library for inspecting and querying eBPF objects.
     </p>
   <br>
 </div>
@@ -10,11 +10,15 @@
 
 It is based upon the work of [libbpf-sys](https://github.com/libbpf/libbpf-sys) to safely create wrappers around [libbpf](https://github.com/libbpf/libbpf). A lot of the design & inspiration stems from [bpftool](https://github.com/libbpf/bpftool) and [libbpf-rs](https://docs.rs/libbpf-rs).
 
-This crate is **NOT** meant to help with writing and loading of eBPF programs and maps. For that, we recommend [libbpf-rs](https://docs.rs/libbpf-rs) and [libbpf-cargo](https://docs.rs/libbpf-cargo).
+This crate is **NOT** meant to help with the writing and loading of eBPF programs and maps. For that, we highly recommend [libbpf-rs](https://docs.rs/libbpf-rs) and [libbpf-cargo](https://docs.rs/libbpf-cargo).
+
+The goal of this library is to aid in eBPF clients interested in managing and monitoring their host's eBPF objects. As an example of this use case, check out [bpf-feature](https://docs.rs/bpf-feature/0.0.1/bpf_feature/).
 
 ## Installation
 
 [![crates.io badge](https://img.shields.io/crates/v/bpf-rs.svg)](https://crates.io/crates/bpf-rs)
+[![crates.io badge](https://img.shields.io/crates/l/bpf-rs.svg)](https://crates.io/crates/bpf-rs)
+[![crates.io badge](https://img.shields.io/docsrs/bpf-rs/latest.svg)](https://docs.rs/bpf-rs)
 
 To use in your project, add into your `Cargo.toml`:
 
