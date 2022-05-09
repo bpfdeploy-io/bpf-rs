@@ -1,6 +1,6 @@
 [package]
 name = "bpf-rs-macros"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 homepage = "https://bpfdeploy.io"
 description = "Collection of proc macros used within bpf-rs and dependant crates."

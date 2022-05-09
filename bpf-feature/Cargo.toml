@@ -1,6 +1,6 @@
 [package]
 name = "bpf-feature"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 homepage = "https://bpfdeploy.io"
 description = "A library for eBPF feature detection"
@@ -13,8 +13,8 @@ flate2 = "1.0.22"
 nix = "0.23.1"
 thiserror = "1.0.30"
 serde = { version = "1.0.136", optional = true, features = ["derive"] }
-bpf-rs = { version = "0.0.8", path = "../bpf-rs" }
-bpf-rs-macros = { version = "0.0.1", path = "../bpf-rs-macros" }
+bpf-rs = { version = "0.0.9", path = "../bpf-rs" }
+bpf-rs-macros = { version = "0.0.2", path = "../bpf-rs-macros" }
 
 [dev-dependencies]
 serde_json = "1.0.79"
