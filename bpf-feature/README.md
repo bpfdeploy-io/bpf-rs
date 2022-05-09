@@ -13,7 +13,7 @@
 
 The checks here are modeled after [bpftool](https://github.com/libbpf/bpftool)'s feature probe functionality.
 
-## Installation
+## Install
 
 [![crates.io badge](https://img.shields.io/crates/v/bpf-feature.svg)](https://crates.io/crates/bpf-feature)
 [![crates.io badge](https://img.shields.io/crates/l/bpf-feature.svg)](https://crates.io/crates/bpf-feature)

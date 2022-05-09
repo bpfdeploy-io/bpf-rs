@@ -28,13 +28,26 @@ Clients can determine available bpf features (such as program & map types, kerne
 
 See [documentation here](https://docs.rs/bpf-feature/).
 
-### Example: [feature-probe.rs](./bpf-feature/examples/feature-probe.rs)
+See [examples here](./bpf-feature/examples/).
 
 
 ## [bpf-obj-dump](./bpf-obj-dump/)
 
+[![crates.io badge](https://img.shields.io/badge/status-WIP-yellow.svg)]()
+
 A work-in-progress library to aid in the dumping of eBPF programs and maps.
 
+## Contributing & Testing
+
+The development here was based on a Debian-based distro on the x86_64 arch against a v5.15 Linux kernel version. The eBPF landscape is progressing quickly but with an eye towards backward compatibility. We aim to do the same so if an issue occurs in your environment, please feel free to file an issue.
+
+### Testing
+
+By default, cargo does not enable any features during tests so be thorough, you might want to run tests enabling specific features or all:
+
+```bash
+$ cargo test --all-features
+```
 
 ## Licenses
 

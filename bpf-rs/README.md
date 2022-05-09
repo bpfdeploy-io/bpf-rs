@@ -14,7 +14,7 @@ This crate is **NOT** meant to help with the writing and loading of eBPF program
 
 The goal of this library is to aid in eBPF clients interested in managing and monitoring their host's eBPF objects. As an example of this use case, check out [bpf-feature](https://docs.rs/bpf-feature/0.0.1/bpf_feature/).
 
-## Installation
+## Install
 
 [![crates.io badge](https://img.shields.io/crates/v/bpf-rs.svg)](https://crates.io/crates/bpf-rs)
 [![crates.io badge](https://img.shields.io/crates/l/bpf-rs.svg)](https://crates.io/crates/bpf-rs)
