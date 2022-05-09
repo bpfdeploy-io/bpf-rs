@@ -26,10 +26,9 @@ An eBPF feature detection library based on [bpftool](https://github.com/libbpf/b
 
 Clients can determine available bpf features (such as program & map types, kernel config values, bpf helper functions etc.) supported in their current kernels.
 
-See [documentation here](https://docs.rs/bpf-feature/).
+See [documentation here](https://docs.rs/bpf-feature/)
 
-See [examples here](./bpf-feature/examples/).
-
+See [examples here](./bpf-feature/examples/)
 
 ## [bpf-obj-dump](./bpf-obj-dump/)
 
@@ -55,4 +54,6 @@ Most, if not all, of the crates published here fall under the permissive [BSD 2-
 
 ## Acknowledgements
 
-A lot of the techniques here were inspired by [bpftool](https://github.com/libbpf/bpftool), [libbpf](https://github.com/libbpf/libbpf) and [libbpf-rs](https://github.com/libbpf/libbpf-rs)
+A lot of the techniques here were inspired by [bpftool](https://github.com/libbpf/bpftool), [libbpf](https://github.com/libbpf/libbpf) and [libbpf-rs](https://github.com/libbpf/libbpf-rs). We aim to support these efforts by contributing back and directly referencing them as the canonical implementations.
+
+ Maintained by [bpfdeploy.io](https://bpfdeploy.io)
