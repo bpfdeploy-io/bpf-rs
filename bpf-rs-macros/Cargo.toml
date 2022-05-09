@@ -4,9 +4,9 @@ version = "0.0.1"
 edition = "2021"
 homepage = "https://bpfdeploy.io"
 description = "Collection of proc macros used within bpf-rs and dependant crates."
-keywords = ["bpf", "ebpf"]
+keywords = ["bpf", "ebpf", "xdp", "linux", "macros"]
 license = "BSD-2-Clause"
-authors = ["Milan <milan@mdaverde.com>"]
+authors = ["Milan <milan@mdaverde.com>", "bpfdeploy.io <team@bpfdeploy.io>"]
 
 [lib]
 proc-macro = true
@@ -14,6 +14,9 @@ proc-macro = true
 [dependencies]
 quote = "1.0.18"
 syn = "1.0.92"
+
+[dev-dependencies]
+serde = "1.0.137"
 
 [features]
 serde = []

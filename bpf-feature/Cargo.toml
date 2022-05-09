@@ -1,11 +1,12 @@
 [package]
 name = "bpf-feature"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
+homepage = "https://bpfdeploy.io"
+description = "A library for eBPF feature detection"
+keywords = ["bpf", "ebpf", "xdp", "linux", "kernel"]
 license = "BSD-2-Clause"
-publish = false
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Milan <milan@mdaverde.com>", "bpfdeploy.io <team@bpfdeploy.io>"]
 
 [dependencies]
 flate2 = "1.0.22"
