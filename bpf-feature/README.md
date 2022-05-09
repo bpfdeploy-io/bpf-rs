@@ -15,17 +15,19 @@ The checks here are modeled after [bpftool](https://github.com/libbpf/bpftool)'s
 
 ## Installation
 
-Using cargo-edit:
+[![crates.io badge](https://img.shields.io/crates/v/bpf-feature.svg)](https://crates.io/crates/bpf-feature)
 
-```sh
-$ cargo add bpf-feature
-```
-
-Or in a Cargo.toml file:
+To use in your project, add into your `Cargo.toml`:
 
 ```toml
 [dependencies]
 bpf-feature = "0.0.1"
+```
+
+or using [cargo-edit](https://github.com/killercup/cargo-edit):
+
+```sh
+$ cargo add bpf-feature
 ```
 
 

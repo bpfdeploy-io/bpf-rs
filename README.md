@@ -18,7 +18,9 @@ See [documentation here](https://docs.rs/bpf-rs/)
 
 ### [bpf-feature](./bpf-feature/)
 
-A bpf feature detection library based on [bpftool](https://github.com/libbpf/bpftool)'s `feature` subcommand.
+[![crates.io badge](https://img.shields.io/crates/v/bpf-feature.svg)](https://crates.io/crates/bpf-feature)
+
+An eBPF feature detection library based on [bpftool](https://github.com/libbpf/bpftool)'s `feature` subcommand.
 
 Clients can determine available bpf features (such as program & map types, kernel config values, bpf helper functions etc.) supported in their current kernels.
 
