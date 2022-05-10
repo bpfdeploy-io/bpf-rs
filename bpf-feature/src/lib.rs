@@ -86,11 +86,8 @@ use serde::Serialize;
 mod serde_ext;
 
 pub mod bpf;
-/// Features derived from compile-time kernel configuration
 pub mod kernel_config;
-/// Features for miscellaneous eBPF subsystem properties
 pub mod misc;
-/// Features available and configurable through procfs
 pub mod runtime;
 
 /// Results of the entire feature detection set from [`detect`]

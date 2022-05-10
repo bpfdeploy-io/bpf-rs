@@ -1,3 +1,19 @@
+//! Features derived from compile-time kernel configuration
+//!
+//! The Linux kernel accepts an assortment of flags that can be enabled or disabled
+//! at compilation. These configuration flags are used to determine which eBPF
+//! features are eventually available on the running kernel.
+//!
+//! Depending on your distribution, your kernel config can be available in a number
+//! of locations such as:
+//!
+//! - `/proc/config.gz`
+//! - `/boot/config`
+//! - `/boot/config-$(uname -r)`
+//!
+//! This module will search for and read your kernel configuration for relevant
+//! eBPF flags. If you believe a flag is missing or incorrectly added to
+//! the set in [`KERNEL_CONFIG_KEYS`],  please file [an issue](https://github.com/bpfdeploy-io/bpf-rs).
 use flate2::bufread::GzDecoder;
 use nix::sys::utsname;
 use std::{
@@ -13,40 +29,7 @@ use bpf_rs_macros::SerializeFromDisplay;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-#[non_exhaustive]
-#[derive(ThisError, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-pub enum KernelConfigError {
-    #[error("can't open file")]
-    NotFound,
-    #[error("file data format unknown")]
-    ContentsUnknown,
-    #[error("can't read from file")]
-    ReadFail,
-}
-
-#[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(SerializeFromDisplay))]
-pub enum ConfigValue {
-    Y,
-    N,
-    M,
-    Other(String),
-}
-
-impl Display for ConfigValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ConfigValue::Y => write!(f, "y"),
-            ConfigValue::N => write!(f, "n"),
-            ConfigValue::M => write!(f, "m"),
-            ConfigValue::Other(value) => write!(f, "{}", value),
-        }
-    }
-}
-
-pub type KernelConfigValues = HashMap<&'static str, ConfigValue>;
-
+/// Entire set of kernel config flags to determine support of
 pub const KERNEL_CONFIG_KEYS: [&'static str; 35] = [
     "CONFIG_BPF",
     "CONFIG_BPF_SYSCALL",
@@ -85,9 +68,63 @@ pub const KERNEL_CONFIG_KEYS: [&'static str; 35] = [
     "CONFIG_HZ",
 ];
 
+
+/// Possible errors when reading a kernel's config file
+#[non_exhaustive]
+#[derive(ThisError, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub enum KernelConfigError {
+    /// Kernel config file was not found
+    #[error("can't open file")]
+    NotFound,
+    /// Could not parse contents of config file
+    #[error("file data format unknown")]
+    ContentsUnknown,
+    /// IO error reading the config file
+    #[error("can't read from file")]
+    ReadFail,
+}
+
+/// Variant of possible config values (e.g. `y`, `n`, `m` etc.)
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(SerializeFromDisplay))]
+pub enum ConfigValue {
+    /// This kernel feature is available.
+    Y,
+    /// This kernel feature is **NOT** available.
+    ///
+    /// This might mean that you need to upgrade your kernel, flag an issue
+    /// with your Linux distro or compile your own kernel to get the necessary
+    /// functionality.
+    N,
+    /// This kernel feature is available *as a module only*.
+    ///
+    /// This means that the feature is available on your system as a kernel
+    /// module but might require privileged enabling of it to gain functionality.
+    M,
+    /// This kernel flag is an unstructured value determined at compile time
+    Other(String),
+}
+
+impl Display for ConfigValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConfigValue::Y => write!(f, "y"),
+            ConfigValue::N => write!(f, "n"),
+            ConfigValue::M => write!(f, "m"),
+            ConfigValue::Other(value) => write!(f, "{}", value),
+        }
+    }
+}
+
+type KernelConfigValues = HashMap<&'static str, ConfigValue>;
+
+/// Primarily just a wrapper for kernel config values
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct KernelConfig {
+    /// A HashMap of kernel config values with the key being the
+    /// flag and the value derived from reading the kernel config file
     #[cfg_attr(feature = "serde", serde(flatten))]
     pub values: KernelConfigValues,
 }
@@ -157,6 +194,8 @@ impl KernelConfig {
     }
 }
 
+/// This module's main function to read and determine support of kernel config
+/// flags
 pub fn features() -> Result<KernelConfig, KernelConfigError> {
     return Ok(KernelConfig {
         values: KernelConfig::probe_kernel_config()?,

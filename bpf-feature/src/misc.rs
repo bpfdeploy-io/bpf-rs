@@ -1,3 +1,4 @@
+//! Features for miscellaneous eBPF subsystem properties
 use bpf_rs::{
     insns::{alu64_imm, exit, jmp32_imm, jmp_imm, mov64_imm, AluOp, JmpOp, Register},
     libbpf_sys::{bpf_insn, bpf_prog_load, BPF_MAXINSNS},

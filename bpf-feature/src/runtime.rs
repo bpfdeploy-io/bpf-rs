@@ -1,3 +1,4 @@
+//! Features available and configurable through procfs
 use nix::sys::statfs::{statfs, PROC_SUPER_MAGIC};
 use std::path::Path;
 use thiserror::Error as ThisError;
