@@ -86,10 +86,14 @@ use serde::Serialize;
 mod serde_ext;
 
 pub mod bpf;
+/// Features derived from compile-time kernel configuration
 pub mod kernel_config;
+/// Features for miscellaneous eBPF subsystem properties
 pub mod misc;
+/// Features available and configurable through procfs
 pub mod runtime;
 
+/// Results of the entire feature detection set from [`detect`]
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Features {
@@ -102,6 +106,7 @@ pub struct Features {
     pub misc: misc::Misc,
 }
 
+/// Options that can be passed into [`detect`]
 pub struct DetectOpts {
     pub full_helpers: bool,
 }
@@ -114,6 +119,7 @@ impl Default for DetectOpts {
     }
 }
 
+/// Primary function to run entire feature detection set
 pub fn detect(opts: DetectOpts) -> Features {
     Features {
         runtime: runtime::features(),

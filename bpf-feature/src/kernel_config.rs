@@ -13,6 +13,7 @@ use bpf_rs_macros::SerializeFromDisplay;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
+#[non_exhaustive]
 #[derive(ThisError, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum KernelConfigError {
