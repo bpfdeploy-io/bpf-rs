@@ -2,6 +2,7 @@
 name = "bpf-feature"
 version = "0.0.3"
 edition = "2021"
+repository = "https://github.com/bpfdeploy-io/bpf-rs"
 homepage = "https://bpfdeploy.io"
 description = "A library for eBPF feature detection"
 keywords = ["bpf", "ebpf", "xdp", "linux", "kernel"]

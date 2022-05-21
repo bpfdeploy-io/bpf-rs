@@ -2,6 +2,7 @@
 name = "bpf-rs-macros"
 version = "0.0.2"
 edition = "2021"
+repository = "https://github.com/bpfdeploy-io/bpf-rs"
 homepage = "https://bpfdeploy.io"
 description = "Collection of proc macros used within bpf-rs and dependant crates."
 keywords = ["bpf", "ebpf", "xdp", "linux", "macros"]

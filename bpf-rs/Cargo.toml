@@ -2,6 +2,7 @@
 name = "bpf-rs"
 version = "0.0.9"
 edition = "2021"
+repository = "https://github.com/bpfdeploy-io/bpf-rs"
 homepage = "https://bpfdeploy.io"
 description = "A safe, lean library for inspecting and querying eBPF objects"
 keywords = ["bpf", "ebpf", "xdp", "linux", "kernel"]
