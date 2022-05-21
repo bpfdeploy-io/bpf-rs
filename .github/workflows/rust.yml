@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Install apt deps
+      run: sudo apt-get -y install curl build-essential linux-headers-generic zlib1g-dev libelf-dev libclang-dev llvm clang
     - name: Build
       run: cargo build --verbose --all-features
     - name: Run tests
