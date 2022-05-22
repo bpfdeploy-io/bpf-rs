@@ -26,6 +26,7 @@ use thiserror::Error as ThisError;
 
 pub use libbpf_sys;
 
+/// Propagates error variants from libbpf-sys
 #[derive(ThisError, Debug)]
 pub enum Error {
     #[error("errno: {0}")]
@@ -36,7 +37,7 @@ pub enum Error {
     Unknown(i32),
 }
 
-// Highly coupled to the proc macro bpf_rs_macros::Derive
+// WARNING: Highly coupled to the proc macro bpf_rs_macros::Derive
 trait StaticName {
     fn name(&self) -> &'static str;
 }

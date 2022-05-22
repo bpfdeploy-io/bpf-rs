@@ -1,3 +1,5 @@
+// TODO: #![warn(missing_docs)]
+// TODO: #![warn(missing_doc_code_examples)]
 //! Primitives for the eBPF instruction set. See [kernel docs](https://www.kernel.org/doc/html/latest/bpf/instruction-set.html)
 //! for the canonical details
 //!
@@ -65,7 +67,24 @@ pub enum Class {
     JMP32 = sys::BPF_JMP32 as u8,
 }
 
-/// Register variants
+/// # eBPF Registers
+///
+/// Quoting the [kernel documentation](https://www.kernel.org/doc/html/latest/bpf/instruction-set.html#registers-and-calling-convention)
+/// on eBPF registers:
+///
+/// > eBPF has **10 general purpose registers** and a read-only frame pointer register, all of which are 64-bits wide.
+/// >
+/// > The eBPF calling convention is defined as:
+/// >
+/// >  - `R0`: return value from function calls, and exit value for eBPF programs
+/// >
+/// >  - `R1` - `R5`: arguments for function calls
+/// >
+/// >  - `R6` - `R9`: callee saved registers that function calls will preserve
+/// >
+/// >  - `R10`: read-only frame pointer to access stack
+/// >
+/// > `R0` - `R5` are scratch registers and eBPF programs needs to spill/fill them if necessary across calls.
 ///
 /// Source: [kernel tree](https://github.com/torvalds/linux/blob/d569e86915b7f2f9795588591c8d5ea0b66481cb/tools/include/uapi/linux/bpf.h#L53)
 #[repr(u8)]
@@ -73,14 +92,23 @@ pub enum Class {
 pub enum Register {
     /// Usually used as either the return value in function calls or as the exit value in programs
     R0 = sys::BPF_REG_0 as u8,
+    ///
     R1 = sys::BPF_REG_1 as u8,
+    ///
     R2 = sys::BPF_REG_2 as u8,
+    ///
     R3 = sys::BPF_REG_3 as u8,
+    ///
     R4 = sys::BPF_REG_4 as u8,
+    ///
     R5 = sys::BPF_REG_5 as u8,
+    ///
     R6 = sys::BPF_REG_6 as u8,
+    ///
     R7 = sys::BPF_REG_7 as u8,
+    ///
     R8 = sys::BPF_REG_8 as u8,
+    ///
     R9 = sys::BPF_REG_9 as u8,
     /// Read-only frame pointer register
     R10 = sys::BPF_REG_10 as u8,
