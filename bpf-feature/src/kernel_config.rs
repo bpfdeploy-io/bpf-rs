@@ -68,7 +68,6 @@ pub const KERNEL_CONFIG_KEYS: [&'static str; 35] = [
     "CONFIG_HZ",
 ];
 
-
 /// Possible errors when reading a kernel's config file
 #[non_exhaustive]
 #[derive(ThisError, Debug)]
@@ -160,7 +159,9 @@ impl KernelConfig {
             return Err(KernelConfigError::ContentsUnknown);
         }
 
-        let mut options = HashMap::new();
+        let mut config = HashMap::from(KERNEL_CONFIG_KEYS.map(|key| {
+            return (key, ConfigValue::N);
+        }));
 
         for line_item in lines_iter {
             let line = line_item.map_err(|_| KernelConfigError::ReadFail)?;
@@ -168,29 +169,32 @@ impl KernelConfig {
                 continue;
             }
 
-            let pieces: Vec<_> = line.split("=").collect();
-            if pieces.len() < 2 {
+            let split_items: Vec<_> = line.split("=").collect();
+            if split_items.len() < 2 {
                 continue;
             }
 
+            let line_key = split_items[0];
+            let line_value = split_items[1];
+
             for key in KERNEL_CONFIG_KEYS {
-                if key != pieces[0] {
+                if key != line_key {
                     continue;
                 }
 
-                options.insert(
+                config.insert(
                     key,
-                    match pieces[1] {
+                    match line_value {
                         "y" => ConfigValue::Y,
                         "m" => ConfigValue::M,
                         "n" => ConfigValue::N,
-                        _ => ConfigValue::Other(pieces[1].to_string()),
+                        _ => ConfigValue::Other(line_value.to_string()),
                     },
                 );
             }
         }
 
-        return Ok(options);
+        return Ok(config);
     }
 }
 
