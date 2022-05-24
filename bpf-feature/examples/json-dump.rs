@@ -7,4 +7,6 @@ fn main() {
 }
 
 #[cfg(not(feature = "serde"))]
-fn main() {}
+fn main() {
+    panic!("This was not built with serde!")
+}
