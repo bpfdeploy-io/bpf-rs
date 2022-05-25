@@ -2,9 +2,7 @@
 //!
 //! This feature set can be used to determine which eBPF program types, maps &
 //! helpers are available to your runtime.
-use bpf_rs::libbpf_sys::{
-    bpf_prog_load, BPF_FUNC_probe_write_user, BPF_FUNC_trace_printk, BPF_FUNC_trace_vprintk,
-};
+use bpf_rs::libbpf_sys::bpf_prog_load;
 use bpf_rs::{BpfHelper, BpfHelperIter, Error as BpfSysError, MapType, ProgramType};
 use nix::errno::Errno;
 use std::collections::HashMap;
@@ -17,7 +15,6 @@ use crate::serde_ext;
 use bpf_rs_macros::SerializeFromDisplay;
 #[cfg(feature = "serde")]
 use serde::Serialize;
-
 
 /// Captures potential errors from detection techniques
 #[non_exhaustive]
@@ -119,11 +116,10 @@ impl Bpf {
                         let helpers = BpfHelperIter::new()
                             .filter_map(|helper| {
                                 if !full {
-                                    #[allow(non_upper_case_globals)]
-                                    match helper.0 {
-                                        BPF_FUNC_trace_printk
-                                        | BPF_FUNC_trace_vprintk
-                                        | BPF_FUNC_probe_write_user => return None,
+                                    match helper {
+                                        BpfHelper::TracePrintk
+                                        | BpfHelper::TraceVprintk
+                                        | BpfHelper::ProbeWriteUser => return None,
                                         _ => {}
                                     };
                                 }
@@ -143,7 +139,6 @@ impl Bpf {
             .collect()
     }
 }
-
 
 /// Options that can be passed into [`features`]
 pub struct BpfFeaturesOpts {
