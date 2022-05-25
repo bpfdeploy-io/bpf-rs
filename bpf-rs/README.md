@@ -12,7 +12,7 @@ It is based upon the work of [libbpf-sys](https://github.com/libbpf/libbpf-sys) 
 
 This crate is **NOT** meant to help with the writing and loading of eBPF programs and maps. For that, we highly recommend [libbpf-rs](https://docs.rs/libbpf-rs) and [libbpf-cargo](https://docs.rs/libbpf-cargo).
 
-The goal of this library is to aid in eBPF clients interested in managing and monitoring their host's eBPF objects. As an example of this use case, check out [bpf-feature](https://docs.rs/bpf-feature/0.0.1/bpf_feature/).
+The goal of this library is to aid in eBPF clients interested in managing and monitoring their host's eBPF objects. As an example of this use case, check out [bpf-feature](https://docs.rs/bpf-feature/latest/bpf_feature/).
 
 ## Install
 
