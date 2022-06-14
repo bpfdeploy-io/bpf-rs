@@ -34,7 +34,7 @@ $ cargo add bpf-feature
 
 ## Documentation
 
-See [documentation here](https://docs.rs/bpf-rs/)
+See [documentation here](https://docs.rs/bpf-feature/)
 
 ## License
 
