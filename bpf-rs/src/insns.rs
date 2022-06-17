@@ -184,22 +184,99 @@ pub enum JmpOp {
     JSLE = sys::BPF_JSLE as u8,
 }
 
-pub fn mov64_imm(reg: Register, imm: i32) -> sys::bpf_insn {
-    unsafe { sys::_BPF_MOV64_IMM(reg.into(), imm) }
+#[repr(u8)]
+#[derive(Debug, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SrcOp {
+    K = sys::BPF_K as u8,
+    X = sys::BPF_X as u8,
 }
 
-pub fn alu64_imm(op: AluOp, reg: Register, imm: i32) -> sys::bpf_insn {
-    unsafe { sys::_BPF_ALU64_IMM(op.into(), reg.into(), imm) }
+// Since Rust lacks native support for bitfields, rust-bindgen tries its best.
+// Hopefully this is good enough, but if not we'll need helpers from libbpf-sys.
+fn create_bpf_insn(code: u8, dst: u8, src: u8, off: i16, imm: i32) -> sys::bpf_insn {
+    return sys::bpf_insn {
+        code,
+        _bitfield_align_1: [],
+        _bitfield_1: sys::bpf_insn::new_bitfield_1(dst, src),
+        off,
+        imm,
+    };
 }
 
-pub fn jmp_imm(jmp: JmpOp, reg: Register, imm: i32, off: i16) -> sys::bpf_insn {
-    unsafe { sys::_BPF_JMP_IMM(jmp.into(), reg.into(), imm, off) }
+pub fn alu64_imm(op: AluOp, dst: Register, imm: i32) -> sys::bpf_insn {
+    create_bpf_insn(
+        u8::from(op) | u8::from(SrcOp::K) | u8::from(Class::ALU64),
+        dst.into(),
+        0,
+        0,
+        imm,
+    )
 }
 
-pub fn jmp32_imm(jmp: JmpOp, reg: Register, imm: i32, off: i16) -> sys::bpf_insn {
-    unsafe { sys::_BPF_JMP32_IMM(jmp.into(), reg.into(), imm, off) }
+pub fn mov64_imm(dst: Register, imm: i32) -> sys::bpf_insn {
+    alu64_imm(AluOp::MOV, dst, imm)
+}
+
+pub fn jmp_imm(jmp: JmpOp, dst: Register, imm: i32, off: i16) -> sys::bpf_insn {
+    create_bpf_insn(
+        u8::from(jmp) | u8::from(SrcOp::K) | u8::from(Class::JMP),
+        dst.into(),
+        0,
+        off,
+        imm,
+    )
+}
+
+pub fn jmp32_imm(jmp: JmpOp, dst: Register, imm: i32, off: i16) -> sys::bpf_insn {
+    create_bpf_insn(
+        u8::from(jmp) | u8::from(SrcOp::K) | u8::from(Class::JMP32),
+        dst.into(),
+        0,
+        off,
+        imm,
+    )
 }
 
 pub fn exit() -> sys::bpf_insn {
-    unsafe { sys::_BPF_EXIT_INSN() }
+    create_bpf_insn(u8::from(JmpOp::EXIT) | u8::from(Class::JMP), 0, 0, 0, 0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bpfdeploy_libbpf_sys as sys;
+
+    #[test]
+    fn test_abi_compat() {
+        let dst = Register::R2;
+        let imm = 123123;
+
+        vec![
+            (
+                unsafe { sys::_BPF_MOV64_IMM(dst.into(), imm) },
+                mov64_imm(dst, imm),
+            ),
+            (
+                unsafe { sys::_BPF_ALU64_IMM(AluOp::MOV.into(), dst.into(), imm) },
+                alu64_imm(AluOp::MOV, dst, imm),
+            ),
+            (
+                unsafe { sys::_BPF_JMP_IMM(JmpOp::JNE.into(), dst.into(), 32, 10) },
+                jmp_imm(JmpOp::JNE, dst, 32, 10),
+            ),
+            (
+                unsafe { sys::_BPF_JMP32_IMM(JmpOp::JNE.into(), dst.into(), 1000, 500) },
+                jmp32_imm(JmpOp::JNE, dst, 1000, 500),
+            ),
+            (unsafe { sys::_BPF_EXIT_INSN() }, exit()),
+        ]
+        .iter()
+        .for_each(|(expected_insn, observed_insn)| {
+            assert_eq!(expected_insn.code, observed_insn.code);
+            assert_eq!(expected_insn.dst_reg(), observed_insn.dst_reg());
+            assert_eq!(expected_insn.src_reg(), observed_insn.src_reg());
+            assert_eq!(expected_insn.off, observed_insn.off);
+            assert_eq!(expected_insn.imm, observed_insn.imm);
+        })
+    }
 }
