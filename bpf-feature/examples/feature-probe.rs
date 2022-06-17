@@ -1,7 +1,7 @@
 use bpf_feature::{
     bpf::BpfError,
     detect,
-    kernel_config::{KernelConfig, KERNEL_CONFIG_KEYS},
+    kernel_config::{ConfigValue, KernelConfig, KERNEL_CONFIG_KEYS},
     misc::Misc,
     DetectOpts,
 };
@@ -71,7 +71,10 @@ fn main() {
     match features.kernel_config {
         Ok(KernelConfig { values }) => KERNEL_CONFIG_KEYS.iter().for_each(|&key| {
             match values.get(key) {
-                Some(value) => println!("{} is set to {}", key, value),
+                Some(value) => match value {
+                    ConfigValue::NotSet => println!("{} is not set", key),
+                    _ => println!("{} is set to {}", key, value),
+                },
                 None => println!("{} is not set", key),
             };
         }),

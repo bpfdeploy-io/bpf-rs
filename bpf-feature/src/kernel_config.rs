@@ -101,6 +101,7 @@ pub enum ConfigValue {
     /// This means that the feature is available on your system as a kernel
     /// module but might require privileged enabling of it to gain functionality.
     M,
+    NotSet,
     /// This kernel flag is an unstructured value determined at compile time
     Other(String),
 }
@@ -111,6 +112,7 @@ impl Display for ConfigValue {
             ConfigValue::Y => write!(f, "y"),
             ConfigValue::N => write!(f, "n"),
             ConfigValue::M => write!(f, "m"),
+            ConfigValue::NotSet => write!(f, "not set"),
             ConfigValue::Other(value) => write!(f, "{}", value),
         }
     }
@@ -160,7 +162,7 @@ impl KernelConfig {
         }
 
         let mut config = HashMap::from(KERNEL_CONFIG_KEYS.map(|key| {
-            return (key, ConfigValue::N);
+            return (key, ConfigValue::NotSet);
         }));
 
         for line_item in lines_iter {
