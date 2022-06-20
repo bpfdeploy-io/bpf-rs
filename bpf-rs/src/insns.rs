@@ -244,7 +244,7 @@ pub fn exit() -> sys::bpf_insn {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bpfdeploy_libbpf_sys as sys;
+    use libbpf_sys as sys;
 
     #[test]
     fn test_abi_compat() {
