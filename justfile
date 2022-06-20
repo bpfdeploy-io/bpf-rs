@@ -1,6 +1,9 @@
 default:
     @just --list
 
+test:
+    cargo test --all-features
+
 build-example example:
     cargo build --all-features --example {{example}}
 
