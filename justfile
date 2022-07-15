@@ -16,5 +16,4 @@ sudorun example:
     sudo ./target/debug/examples/{{example}}
 
 alias r := run
-alias sr := sudorun
 alias t := test

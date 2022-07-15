@@ -10,7 +10,7 @@ use nix::{
 };
 use std::ptr;
 
-#[cfg(feature="serde")]
+#[cfg(feature = "serde")]
 use serde::Serialize;
 
 #[derive(Debug)]
@@ -25,6 +25,7 @@ pub struct Misc {
 impl Misc {
     fn load_insns(insns: Vec<bpf_insn>) -> bool {
         Errno::clear();
+
         let fd = unsafe {
             bpf_prog_load(
                 ProgramType::SocketFilter.into(),
@@ -32,6 +33,7 @@ impl Misc {
                 ProgramLicense::GPL.as_ptr(),
                 insns.as_ptr(),
                 u64::try_from(insns.len()).unwrap_or(0u64),
+                // &load_opts as *const bpf_prog_load_opts,
                 ptr::null(),
             )
         };
@@ -89,5 +91,18 @@ pub fn features() -> Misc {
         bounded_loops: Misc::probe_bounded_loops(),
         isa_v2_ext: Misc::probe_isa_v2(),
         isa_v3_ext: Misc::probe_isa_v3(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_probes() {
+        assert_eq!(Misc::probe_large_insn_limit(), true);
+        assert_eq!(Misc::probe_bounded_loops(), true);
+        assert_eq!(Misc::probe_isa_v2(), true);
+        assert_eq!(Misc::probe_isa_v3(), true);
     }
 }
