@@ -17,3 +17,4 @@ sudorun example:
 
 alias r := run
 alias sr := sudorun
+alias t := test
