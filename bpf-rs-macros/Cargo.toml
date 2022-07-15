@@ -1,6 +1,6 @@
 [package]
 name = "bpf-rs-macros"
-version = "0.0.2"
+version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/bpfdeploy-io/bpf-rs"
 homepage = "https://bpfdeploy.io"

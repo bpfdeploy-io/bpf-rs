@@ -1,6 +1,6 @@
 [package]
 name = "bpf-rs"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 repository = "https://github.com/bpfdeploy-io/bpf-rs"
 homepage = "https://bpfdeploy.io"
@@ -14,7 +14,7 @@ num_enum = "0.5.7"
 thiserror = "1.0.30"
 libbpf-sys = "0.8.2"
 serde = { version = "1.0.136", optional = true, features = ["derive"] }
-bpf-rs-macros = { version = "0.0.2", path = "../bpf-rs-macros" }
+bpf-rs-macros = { version = "0.1.0", path = "../bpf-rs-macros" }
 
 [dev-dependencies]
 bpfdeploy-libbpf-sys = "0.8.0"
