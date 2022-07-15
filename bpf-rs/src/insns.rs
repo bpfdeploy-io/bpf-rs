@@ -217,6 +217,20 @@ pub fn mov64_imm(dst: Register, imm: i32) -> sys::bpf_insn {
     alu64_imm(AluOp::MOV, dst, imm)
 }
 
+pub fn alu64_reg(op: AluOp, dst: Register, src: Register) -> sys::bpf_insn {
+    create_bpf_insn(
+        u8::from(op) | u8::from(SrcOp::X) | u8::from(Class::ALU64),
+        dst.into(),
+        src.into(),
+        0,
+        0,
+    )
+}
+
+pub fn mov64_reg(dst: Register, src: Register) -> sys::bpf_insn {
+    alu64_reg(AluOp::MOV, dst, src)
+}
+
 pub fn jmp_imm(jmp: JmpOp, dst: Register, imm: i32, off: i16) -> sys::bpf_insn {
     create_bpf_insn(
         u8::from(jmp) | u8::from(SrcOp::K) | u8::from(Class::JMP),
