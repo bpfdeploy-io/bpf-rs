@@ -12,9 +12,12 @@ authors = ["Milan <milan@mdaverde.com>", "bpfdeploy.io <team@bpfdeploy.io>"]
 [dependencies]
 num_enum = "0.5.7"
 thiserror = "1.0.30"
-libbpf-sys = { version = "0.8.0", package = "bpfdeploy-libbpf-sys" }
+libbpf-sys = "0.8.2"
 serde = { version = "1.0.136", optional = true, features = ["derive"] }
 bpf-rs-macros = { version = "0.0.2", path = "../bpf-rs-macros" }
+
+[dev-dependencies]
+bpfdeploy-libbpf-sys = "0.8.0"
 
 [features]
 serde = ["dep:serde", "bpf-rs-macros/serde"]

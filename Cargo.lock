@@ -39,6 +39,7 @@ version = "0.1.0"
 dependencies = [
  "bpf-rs-macros",
  "bpfdeploy-libbpf-sys",
+ "libbpf-sys",
  "num_enum",
  "serde",
  "thiserror",
@@ -101,6 +102,16 @@ name = "itoa"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aab8fc367588b89dcee83ab0fd66b72b50b72fa1904d7095045ace2b0c81c35"
+
+[[package]]
+name = "libbpf-sys"
+version = "0.8.2+v0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba21fd78ad2c7e9d090754cdafb084f8e39e19fc8b040a1b7177b8c21104a5e3"
+dependencies = [
+ "cc",
+ "pkg-config",
+]
 
 [[package]]
 name = "libc"
