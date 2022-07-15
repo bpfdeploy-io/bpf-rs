@@ -18,5 +18,8 @@ sudorun example:
     just build-example {{example}}
     sudo ./target/debug/examples/{{example}}
 
+fmt:
+    cargo fmt
+
 alias r := run
 alias t := test
