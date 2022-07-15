@@ -4,6 +4,9 @@ default:
 test:
     cargo test --all-features
 
+sudotest:
+    sudo -E "PATH=$PATH" $(which cargo) t --all-features
+
 build-example example:
     cargo build --all-features --example {{example}}
 
