@@ -18,5 +18,5 @@ jobs:
     - name: deps for libbpf
       run: sudo apt-get install -y clang-12 libelf-dev zlib1g-dev
     - run: cargo build --verbose --workspace --all-features
-    - run: cargo test --verbose --workspace --all-features
+    - run: sudo cargo test --verbose --workspace --all-features
     - run: cargo fmt --check
