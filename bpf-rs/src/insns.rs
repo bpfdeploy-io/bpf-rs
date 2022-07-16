@@ -194,13 +194,13 @@ pub enum SrcOp {
 // Since Rust lacks native support for bitfields, rust-bindgen tries its best.
 // Hopefully this is good enough, but if not we'll need helpers from libbpf-sys.
 fn create_bpf_insn(code: u8, dst: u8, src: u8, off: i16, imm: i32) -> sys::bpf_insn {
-    return sys::bpf_insn {
+    sys::bpf_insn {
         code,
         _bitfield_align_1: [],
         _bitfield_1: sys::bpf_insn::new_bitfield_1(dst, src),
         off,
         imm,
-    };
+    }
 }
 
 pub fn alu64_imm(op: AluOp, dst: Register, imm: i32) -> sys::bpf_insn {

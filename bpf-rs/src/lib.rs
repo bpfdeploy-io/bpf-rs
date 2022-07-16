@@ -171,7 +171,7 @@ impl Iterator for ProgramTypeIter {
         if next > ProgramType::Syscall.into() {
             None
         } else {
-            self.0 = self.0 + 1;
+            self.0 += 1;
             ProgramType::try_from_primitive(next).ok()
         }
     }
@@ -396,7 +396,7 @@ impl Iterator for MapTypeIter {
         if next > MapType::BloomFilter.into() {
             None
         } else {
-            self.0 = self.0 + 1;
+            self.0 += 1;
             MapType::try_from_primitive(next).ok()
         }
     }
@@ -833,6 +833,12 @@ impl BpfHelperIter {
     }
 }
 
+impl Default for BpfHelperIter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Iterator for BpfHelperIter {
     type Item = BpfHelper;
 
@@ -841,7 +847,7 @@ impl Iterator for BpfHelperIter {
         if next >= __BPF_FUNC_MAX_ID {
             None
         } else {
-            self.0 = self.0 + 1;
+            self.0 += 1;
             BpfHelper::try_from_primitive(next).ok()
         }
     }
@@ -865,11 +871,10 @@ mod tests {
 
         let invalid_helper = BpfHelper::try_from(__BPF_FUNC_MAX_ID);
         assert!(invalid_helper.is_err());
-        // assert_eq!(invalid_helper.name(), "<unknown>");
     }
 
     #[test]
     fn program_license_ptr() {
-        assert!(ProgramLicense::GPL.as_ptr().is_null() == false);
+        assert!(!ProgramLicense::GPL.as_ptr().is_null());
     }
 }

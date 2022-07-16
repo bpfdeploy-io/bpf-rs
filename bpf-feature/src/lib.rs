@@ -43,10 +43,8 @@
 //! ```
 //! use bpf_feature::{detect, DetectOpts};
 //!
-//! fn main() {
-//!     let features = detect(DetectOpts::default());
-//!     // ...
-//! }
+//! let features = detect(DetectOpts::default());
+//! // ...
 //! ```
 //!
 //! ## Modularity
@@ -65,21 +63,16 @@
 //! ```
 //! use bpf_feature::kernel_config::{self, KERNEL_CONFIG_KEYS, KernelConfig};
 //!
-//! fn main() {
-//!     match kernel_config::features() {
-//!         Ok(KernelConfig { values }) => KERNEL_CONFIG_KEYS.iter().for_each(|&key| {
-//!             match values.get(key) {
-//!                 Some(value) => println!("{} is set to {}", key, value),
-//!                 None => println!("{} is not set", key),
-//!             };
-//!         }),
-//!         Err(err) => println!("skipping kernel config, {}", err),
-//!     }
+//! match kernel_config::features() {
+//!     Ok(KernelConfig { values }) => KERNEL_CONFIG_KEYS.iter().for_each(|&key| {
+//!         match values.get(key) {
+//!             Some(value) => println!("{} is set to {}", key, value),
+//!             None => println!("{} is not set", key),
+//!         };
+//!     }),
+//!     Err(err) => println!("skipping kernel config, {}", err),
 //! }
 //! ```
-//!
-//!
-
 #[cfg(feature = "serde")]
 use serde::Serialize;
 #[cfg(feature = "serde")]
@@ -104,16 +97,9 @@ pub struct Features {
 }
 
 /// Options that can be passed into [`detect`]
+#[derive(Default)]
 pub struct DetectOpts {
     pub full_helpers: bool,
-}
-
-impl Default for DetectOpts {
-    fn default() -> Self {
-        Self {
-            full_helpers: false,
-        }
-    }
 }
 
 /// Primary function to run entire feature detection set

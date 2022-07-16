@@ -21,5 +21,8 @@ sudorun example:
 fmt:
     cargo fmt
 
+clippy:
+    cargo clippy --tests -- -D warnings
+
 alias r := run
 alias t := test

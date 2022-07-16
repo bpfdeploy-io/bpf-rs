@@ -88,7 +88,7 @@ impl Bpf {
             .map(|program_type| {
                 (
                     program_type,
-                    program_type.probe().map_err(|err| BpfError::ProbeErr(err)),
+                    program_type.probe().map_err(BpfError::ProbeErr),
                 )
             })
             .collect()
@@ -96,12 +96,7 @@ impl Bpf {
 
     fn probe_map_types() -> HashMap<MapType, Result<bool, BpfError>> {
         MapType::iter()
-            .map(|map_type| {
-                (
-                    map_type,
-                    map_type.probe().map_err(|err| BpfError::ProbeErr(err)),
-                )
-            })
+            .map(|map_type| (map_type, map_type.probe().map_err(BpfError::ProbeErr)))
             .collect()
     }
 
@@ -141,6 +136,7 @@ impl Bpf {
 }
 
 /// Options that can be passed into [`features`]
+#[derive(Default)]
 pub struct BpfFeaturesOpts {
     /// For compatibility purposes with bpftool, the helpers determined support for
     /// is not the complete set. A few always-available helpers are filtered out
@@ -148,14 +144,6 @@ pub struct BpfFeaturesOpts {
     ///
     /// Default: `false`
     pub full_helpers: bool,
-}
-
-impl Default for BpfFeaturesOpts {
-    fn default() -> Self {
-        Self {
-            full_helpers: false,
-        }
-    }
 }
 
 /// This module's main function to run [`Bpf`] feature detection set

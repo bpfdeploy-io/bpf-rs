@@ -30,7 +30,7 @@ use bpf_rs_macros::SerializeFromDisplay;
 use serde::Serialize;
 
 /// Entire set of kernel config flags to determine support of
-pub const KERNEL_CONFIG_KEYS: [&'static str; 35] = [
+pub const KERNEL_CONFIG_KEYS: [&str; 35] = [
     "CONFIG_BPF",
     "CONFIG_BPF_SYSCALL",
     "CONFIG_HAVE_EBPF_JIT",
@@ -161,9 +161,7 @@ impl KernelConfig {
             return Err(KernelConfigError::ContentsUnknown);
         }
 
-        let mut config = HashMap::from(KERNEL_CONFIG_KEYS.map(|key| {
-            return (key, ConfigValue::NotSet);
-        }));
+        let mut config = HashMap::from(KERNEL_CONFIG_KEYS.map(|key| (key, ConfigValue::NotSet)));
 
         for line_item in lines_iter {
             let line = line_item.map_err(|_| KernelConfigError::ReadFail)?;
@@ -171,7 +169,7 @@ impl KernelConfig {
                 continue;
             }
 
-            let split_items: Vec<_> = line.split("=").collect();
+            let split_items: Vec<_> = line.split('=').collect();
             if split_items.len() < 2 {
                 continue;
             }
@@ -196,14 +194,14 @@ impl KernelConfig {
             }
         }
 
-        return Ok(config);
+        Ok(config)
     }
 }
 
 /// This module's main function to read and determine support of kernel config
 /// flags
 pub fn features() -> Result<KernelConfig, KernelConfigError> {
-    return Ok(KernelConfig {
+    Ok(KernelConfig {
         values: KernelConfig::probe_kernel_config()?,
-    });
+    })
 }

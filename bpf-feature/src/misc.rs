@@ -100,9 +100,9 @@ mod tests {
 
     #[test]
     fn test_probes() {
-        assert_eq!(Misc::probe_large_insn_limit(), true);
-        assert_eq!(Misc::probe_bounded_loops(), true);
-        assert_eq!(Misc::probe_isa_v2(), true);
-        assert_eq!(Misc::probe_isa_v3(), true);
+        assert!(Misc::probe_large_insn_limit());
+        assert!(Misc::probe_bounded_loops());
+        assert!(Misc::probe_isa_v2());
+        assert!(Misc::probe_isa_v3());
     }
 }
