@@ -8,6 +8,7 @@ description = "A safe, lean library for inspecting and querying eBPF objects"
 keywords = ["bpf", "ebpf", "xdp", "linux", "kernel"]
 license = "BSD-2-Clause"
 authors = ["Milan <milan@mdaverde.com>", "bpfdeploy.io <team@bpfdeploy.io>"]
+rust-version = "1.60"
 
 [dependencies]
 num_enum = "0.5.7"
