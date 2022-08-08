@@ -8,6 +8,7 @@ description = "Collection of proc macros used within bpf-rs and dependant crates
 keywords = ["bpf", "ebpf", "xdp", "linux", "macros"]
 license = "BSD-2-Clause"
 authors = ["Milan <milan@mdaverde.com>", "bpfdeploy.io <team@bpfdeploy.io>"]
+rust-version = "1.60"
 
 [lib]
 proc-macro = true

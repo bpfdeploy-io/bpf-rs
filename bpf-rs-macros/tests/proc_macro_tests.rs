@@ -9,6 +9,7 @@ trait StaticName {
 #[test]
 fn test_derive_display() {
     use bpf_rs_macros::Display;
+
     #[derive(Display)]
     struct Person(&'static str);
 
