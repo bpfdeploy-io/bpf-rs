@@ -13,12 +13,12 @@ rust-version = "1.60"
 [dependencies]
 num_enum = "0.5.7"
 thiserror = "1.0.30"
-libbpf-sys = "0.8.3"
+libbpf-sys = "1.0.0"
 serde = { version = "1.0.136", optional = true, features = ["derive"] }
 bpf-rs-macros = { version = "0.1.0", path = "../bpf-rs-macros" }
 
 [dev-dependencies]
-bpfdeploy-libbpf-sys = "0.8.0"
+bpfdeploy-libbpf-sys = "1.0.1"
 
 [features]
 serde = ["dep:serde", "bpf-rs-macros/serde"]

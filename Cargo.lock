@@ -56,9 +56,9 @@ dependencies = [
 
 [[package]]
 name = "bpfdeploy-libbpf-sys"
-version = "0.8.0+v0.8.0"
+version = "1.0.1+v1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98ff56575468a91947fc5a9b368deb99104c60cdaae5ff3dd2c794070f3b1647"
+checksum = "db7f4488b407df19b7be18bc418f37ee4d6546f03b33925ee6e4bdd93cb0693c"
 dependencies = [
  "cc",
  "pkg-config",
@@ -105,9 +105,9 @@ checksum = "1aab8fc367588b89dcee83ab0fd66b72b50b72fa1904d7095045ace2b0c81c35"
 
 [[package]]
 name = "libbpf-sys"
-version = "0.8.3+v0.8.1"
+version = "1.0.0+v1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31a75b565b9fa61e0ca3b5bf7b7af09d8f794f66e0cfce982d44f10e81aa010c"
+checksum = "1ac3b57422fd2678ecbcff6961dcb7caa4d5004191a7deac071a40082d5772b6"
 dependencies = [
  "cc",
  "pkg-config",
