@@ -24,7 +24,7 @@ To use in your project, add into your `Cargo.toml`:
 
 ```toml
 [dependencies]
-bpf-rs = "0.1.0"
+bpf-rs = "0.2.0"
 ```
 
 or using [cargo-edit](https://github.com/killercup/cargo-edit):
