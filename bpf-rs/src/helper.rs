@@ -217,6 +217,19 @@ pub enum BpfHelper {
     ImaFileHash = 193,
     KptrXchg = 194,
     MapLookupPercpuElem = 195,
+    SkcToMptcpSock = 196,
+    DynptrFromMem = 197,
+    RingbufReserveDynptr = 198,
+    RingbufSubmitDynptr = 199,
+    RingbufDiscardDynptr = 200,
+    DynptrRead = 201,
+    DynptrWrite = 202,
+    DynptrData = 203,
+    TcpRawGenSyncookieIpv4 = 204,
+    TcpRawGenSyncookieIpv6 = 205,
+    TcpRawCheckSyncookieIpv4 = 206,
+    TcpRawCheckSyncookieIpv6 = 207,
+    KtimeGetTaiNs = 208,
 }
 
 impl BpfHelper {
@@ -424,6 +437,19 @@ impl StaticName for BpfHelper {
             BpfHelper::ImaFileHash => "bpf_ima_file_hash",
             BpfHelper::KptrXchg => "bpf_kptr_xchg",
             BpfHelper::MapLookupPercpuElem => "bpf_map_lookup_percpu_elem",
+            BpfHelper::SkcToMptcpSock => "skc_to_mptcp_sock",
+            BpfHelper::DynptrFromMem => "dynptr_from_mem",
+            BpfHelper::RingbufReserveDynptr => "ringbuf_reserve_dynptr",
+            BpfHelper::RingbufSubmitDynptr => "ringbuf_submit_dynptr",
+            BpfHelper::RingbufDiscardDynptr => "ringbuf_discard_dynptr",
+            BpfHelper::DynptrRead => "dynptr_read",
+            BpfHelper::DynptrWrite => "dynptr_write",
+            BpfHelper::DynptrData => "dynptr_data",
+            BpfHelper::TcpRawGenSyncookieIpv4 => "tcp_raw_gen_syncookie_ipv4",
+            BpfHelper::TcpRawGenSyncookieIpv6 => "tcp_raw_gen_syncookie_ipv6",
+            BpfHelper::TcpRawCheckSyncookieIpv4 => "tcp_raw_check_syncookie_ipv4",
+            BpfHelper::TcpRawCheckSyncookieIpv6 => "tcp_raw_check_syncookie_ipv6",
+            BpfHelper::KtimeGetTaiNs => "ktime_get_tai_ns",
         }
     }
 }

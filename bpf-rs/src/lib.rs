@@ -43,7 +43,7 @@ trait StaticName {
 
 #[cfg(test)]
 mod tests {
-    use super::libbpf_sys::__BPF_FUNC_MAX_ID;
+    use super::libbpf_sys as sys;
     use super::*;
 
     #[test]
@@ -56,9 +56,25 @@ mod tests {
             })
             .count();
 
-        assert_eq!(count, usize::try_from(__BPF_FUNC_MAX_ID - 1).unwrap());
+        assert_eq!(count, usize::try_from(sys::__BPF_FUNC_MAX_ID - 1).unwrap());
 
-        let invalid_helper = BpfHelper::try_from(__BPF_FUNC_MAX_ID);
+        // Because libbpf-sys's bindings generate consts we can't loop (although
+        // maybe we should have this ability?) and verify that u32 values match
+        // up with our helpers. We sample a few here
+        assert_eq!(
+            u32::from(BpfHelper::GetPrandomU32),
+            sys::BPF_FUNC_get_prandom_u32
+        );
+        assert_eq!(
+            u32::from(BpfHelper::TraceVprintk),
+            sys::BPF_FUNC_trace_vprintk
+        );
+        assert_eq!(
+            u32::from(BpfHelper::TcpRawGenSyncookieIpv6),
+            sys::BPF_FUNC_tcp_raw_gen_syncookie_ipv6
+        );
+
+        let invalid_helper = BpfHelper::try_from(sys::__BPF_FUNC_MAX_ID);
         assert!(invalid_helper.is_err());
     }
 
