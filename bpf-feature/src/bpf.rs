@@ -3,7 +3,7 @@
 //! This feature set can be used to determine which eBPF program types, maps &
 //! helpers are available to your runtime.
 use bpf_rs::libbpf_sys::bpf_prog_load;
-use bpf_rs::{BpfHelper, BpfHelperIter, Error as BpfSysError, MapType, ProgramType};
+use bpf_rs::{BpfHelper, Error as BpfSysError, MapType, ProgramType};
 use nix::errno::Errno;
 use std::collections::HashMap;
 use std::ptr;
@@ -108,7 +108,7 @@ impl Bpf {
                 // against this before probing for helper support.
                 match program_type.probe() {
                     Ok(true) => {
-                        let helpers = BpfHelperIter::new()
+                        let helpers = BpfHelper::iter()
                             .filter_map(|helper| {
                                 if !full {
                                     match helper {
