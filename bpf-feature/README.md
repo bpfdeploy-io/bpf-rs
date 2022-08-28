@@ -23,7 +23,7 @@ To use in your project, add into your `Cargo.toml`:
 
 ```toml
 [dependencies]
-bpf-feature = "0.0.5"
+bpf-feature = "0.1.1"
 ```
 
 or using [cargo-edit](https://github.com/killercup/cargo-edit):
