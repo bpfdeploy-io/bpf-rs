@@ -14,7 +14,7 @@ flate2 = "1.0.22"
 nix = "0.23.1"
 thiserror = "1.0.30"
 serde = { version = "1.0.136", optional = true, features = ["derive"] }
-bpf-rs = { version = "0.2.0", path = "../bpf-rs" }
+bpf-rs = { version = "0.3.0", path = "../bpf-rs" }
 bpf-rs-macros = { version = "0.2.0", path = "../bpf-rs-macros" }
 
 [dev-dependencies]
