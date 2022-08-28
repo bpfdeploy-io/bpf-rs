@@ -234,7 +234,7 @@ pub enum BpfHelper {
 
 impl BpfHelper {
     pub fn iter() -> impl Iterator<Item = BpfHelper> {
-        return BpfHelperIter::new();
+        BpfHelperIter::new()
     }
 }
 
