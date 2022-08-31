@@ -16,6 +16,8 @@ thiserror = "1.0.30"
 libbpf-sys = "1.0.0"
 serde = { version = "1.0.136", optional = true, features = ["derive"] }
 bpf-rs-macros = { version = "0.2.0", path = "../bpf-rs-macros" }
+strum = "0.24"
+strum_macros = "0.24"
 
 [dev-dependencies]
 bpfdeploy-libbpf-sys = "1.0.1"

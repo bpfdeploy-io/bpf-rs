@@ -15,12 +15,14 @@ mod helper;
 pub mod insns;
 mod map;
 mod program;
+mod attach_type;
 
 // Re-exports
 pub use helper::BpfHelper;
 pub use libbpf_sys;
 pub use map::MapType;
 pub use program::{ProgramInfo, ProgramLicense, ProgramType};
+
 
 use std::fmt::Debug;
 use thiserror::Error as ThisError;
@@ -37,6 +39,8 @@ pub enum Error {
 }
 
 // WARNING: Highly coupled to the proc macro bpf_rs_macros::Derive
+// Trait can't be part of the bpf_rs_macros crate because a proc crate
+// can only export macros
 trait StaticName {
     fn name(&self) -> &'static str;
 }
