@@ -12,7 +12,7 @@
 [![crates.io badge](https://img.shields.io/crates/l/bpf-rs.svg)](https://crates.io/crates/bpf-rs)
 [![crates.io badge](https://img.shields.io/docsrs/bpf-rs/latest.svg)](https://docs.rs/bpf-rs)
 
-A core library for inspecting and querying eBPF objects.
+A core library for managing eBPF objects, focused on ergonomics and serialization.
 
 See [documentation here](https://docs.rs/bpf-rs/)
 

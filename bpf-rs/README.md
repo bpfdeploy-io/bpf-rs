@@ -1,7 +1,7 @@
 <div align="center">
   <h1>bpf-rs</h1>
     <p>
-      A safe, flexible library for inspecting and querying eBPF objects.
+      A core library for managing eBPF objects, focused on ergonomics and serialization.
     </p>
   <br>
 </div>
