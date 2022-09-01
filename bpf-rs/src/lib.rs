@@ -81,9 +81,4 @@ mod tests {
         let invalid_helper = BpfHelper::try_from(sys::__BPF_FUNC_MAX_ID);
         assert!(invalid_helper.is_err());
     }
-
-    #[test]
-    fn program_license_ptr() {
-        assert!(!ProgramLicense::GPL.as_ptr().is_null());
-    }
 }

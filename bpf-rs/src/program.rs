@@ -1,18 +1,19 @@
+use libbpf_sys::{libbpf_bpf_prog_type_str, libbpf_probe_bpf_helper, libbpf_probe_bpf_prog_type};
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::{ffi::CStr, os::raw, ptr, time::Duration};
+use strum_macros::EnumIter;
+
+use crate::{BpfHelper, Error, StaticName};
 
 use bpf_rs_macros::Display;
 #[cfg(feature = "serde")]
 use bpf_rs_macros::SerializeFromDisplay;
 
-use crate::{BpfHelper, Error, StaticName};
-use libbpf_sys::{libbpf_probe_bpf_helper, libbpf_probe_bpf_prog_type};
-use num_enum::{IntoPrimitive, TryFromPrimitive};
-
-/// eBPF program type variants. Based off of [kernel header's](https://github.com/torvalds/linux/blob/b253435746d9a4a701b5f09211b9c14d3370d0da/include/uapi/linux/bpf.h#L922)
-/// `enum bpf_prog_type`
 #[non_exhaustive]
 #[repr(u32)]
-#[derive(Debug, Display, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(
+    Debug, Display, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash, EnumIter,
+)]
 #[cfg_attr(feature = "serde", derive(SerializeFromDisplay))]
 pub enum ProgramType {
     Unspec = 0,
@@ -81,65 +82,20 @@ impl ProgramType {
     ///
     /// **Note**: Skips [`ProgramType::Unspec`] since it's an invalid program type
     pub fn iter() -> impl Iterator<Item = ProgramType> {
-        ProgramTypeIter(1)
+        <Self as strum::IntoEnumIterator>::iter()
     }
 }
 
-// TODO: look into using libbpf_bpf_prog_type_str
 impl StaticName for ProgramType {
-    /// Based off of bpftool's
-    /// [`prog_type_name`](https://github.com/libbpf/bpftool/blob/9443d42430017ed2d04d7ab411131525ced62d6a/src/prog.c#L39),
-    /// returns a human-readable name of the eBPF program type.
     fn name(&self) -> &'static str {
-        match *self {
-            ProgramType::Unspec => "unspec",
-            ProgramType::SocketFilter => "socket_filter",
-            ProgramType::Kprobe => "kprobe",
-            ProgramType::SchedCls => "sched_cls",
-            ProgramType::SchedAct => "sched_act",
-            ProgramType::Tracepoint => "tracepoint",
-            ProgramType::Xdp => "xdp",
-            ProgramType::PerfEvent => "perf_event",
-            ProgramType::CgroupSkb => "cgroup_skb",
-            ProgramType::CgroupSock => "cgroup_sock",
-            ProgramType::LwtIn => "lwt_in",
-            ProgramType::LwtOut => "lwt_out",
-            ProgramType::LwtXmit => "lwt_xmit",
-            ProgramType::SockOps => "sock_ops",
-            ProgramType::SkSkb => "sk_skb",
-            ProgramType::CgroupDevice => "cgroup_device",
-            ProgramType::SkMsg => "sk_msg",
-            ProgramType::RawTracepoint => "raw_tracepoint",
-            ProgramType::CgroupSockAddr => "cgroup_sock_addr",
-            ProgramType::LwtSeg6local => "lwt_seg6local",
-            ProgramType::LircMode2 => "lirc_mode2",
-            ProgramType::SkReuseport => "sk_reuseport",
-            ProgramType::FlowDissector => "flow_dissector",
-            ProgramType::CgroupSysctl => "cgroup_sysctl",
-            ProgramType::RawTracepointWritable => "raw_tracepoint_writable",
-            ProgramType::CgroupSockopt => "cgroup_sockopt",
-            ProgramType::Tracing => "tracing",
-            ProgramType::StructOps => "struct_ops",
-            ProgramType::Ext => "ext",
-            ProgramType::Lsm => "lsm",
-            ProgramType::SkLookup => "sk_lookup",
-            ProgramType::Syscall => "syscall",
+        let name_ptr = unsafe { libbpf_bpf_prog_type_str((*self).into()) };
+        if name_ptr.is_null() {
+            panic!("Program type enum value not understood by libbpf_bpf_prog_type_str");
         }
-    }
-}
 
-struct ProgramTypeIter(u32);
-
-impl Iterator for ProgramTypeIter {
-    type Item = ProgramType;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let next = self.0;
-        if next > ProgramType::Syscall.into() {
-            None
-        } else {
-            self.0 += 1;
-            ProgramType::try_from_primitive(next).ok()
+        match unsafe { CStr::from_ptr(name_ptr) }.to_str() {
+            Ok(name_str) => name_str,
+            Err(err) => panic!("Program type name has invalid utf8 character: {}", err),
         }
     }
 }
@@ -248,5 +204,27 @@ impl ProgramLicense {
         CStr::from_bytes_with_nul(self.as_str_with_nul().as_bytes())
             .unwrap()
             .as_ptr()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{ProgramLicense, ProgramType};
+
+    #[test]
+    fn test_program_type() {
+        assert_eq!(
+            u32::from(ProgramType::Syscall),
+            libbpf_sys::BPF_PROG_TYPE_SYSCALL
+        );
+
+        ProgramType::iter().for_each(|ty| {
+            assert!(!format!("{}", ty).is_empty());
+        });
+    }
+
+    #[test]
+    fn test_program_license_ptr() {
+        assert!(!ProgramLicense::GPL.as_ptr().is_null());
     }
 }
