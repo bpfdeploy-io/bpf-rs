@@ -67,6 +67,7 @@ impl AttachType {
 }
 
 impl StaticName for AttachType {
+    /// A human-readable name of the eBPF program attachment type.
     fn name(&self) -> &'static str {
         let attach_type_ptr = unsafe { libbpf_sys::libbpf_bpf_attach_type_str((*self).into()) };
         if attach_type_ptr.is_null() {

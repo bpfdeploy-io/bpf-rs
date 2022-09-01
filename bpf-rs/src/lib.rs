@@ -11,18 +11,17 @@
 //! and maps. For that, we recommend [libbpf-rs](https://docs.rs/libbpf-rs) and
 //! [libbpf-cargo](https://docs.rs/libbpf-cargo).
 //!
+mod attach_type;
 mod helper;
 pub mod insns;
 mod map;
 mod program;
-mod attach_type;
 
 // Re-exports
 pub use helper::BpfHelper;
 pub use libbpf_sys;
 pub use map::MapType;
 pub use program::{ProgramInfo, ProgramLicense, ProgramType};
-
 
 use std::fmt::Debug;
 use thiserror::Error as ThisError;
