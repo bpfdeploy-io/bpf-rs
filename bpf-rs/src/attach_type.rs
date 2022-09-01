@@ -74,14 +74,9 @@ impl StaticName for AttachType {
             panic!("Use of attachment type enum value that current version of libbpf does not understand");
         }
 
-        let attach_type_cstr = unsafe { CStr::from_ptr(attach_type_ptr) };
-
-        match attach_type_cstr.to_str() {
-            Ok(name) => name,
-            Err(err) => {
-                panic!("Invalid utf8 error in attachment type name: {}", err);
-            }
-        }
+        unsafe { CStr::from_ptr(attach_type_ptr) }
+            .to_str()
+            .expect("Invalid utf8 error in attachment type name: {}")
     }
 }
 

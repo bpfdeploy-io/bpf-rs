@@ -96,10 +96,9 @@ impl StaticName for ProgramType {
             panic!("Program type enum value not understood by libbpf_bpf_prog_type_str");
         }
 
-        match unsafe { CStr::from_ptr(name_ptr) }.to_str() {
-            Ok(name_str) => name_str,
-            Err(err) => panic!("Program type name has invalid utf8 character: {}", err),
-        }
+        unsafe { CStr::from_ptr(name_ptr) }
+            .to_str()
+            .expect("Program type name has invalid utf8 character: {}")
     }
 }
 

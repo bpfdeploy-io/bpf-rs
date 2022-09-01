@@ -251,7 +251,8 @@ impl BpfHelper {
 }
 
 impl StaticName for BpfHelper {
-    // libbpf doesn't have a libbpf_*_str util for bpf helper functions
+    // libbpf doesn't have a libbpf_*_str util for bpf helper functions and the
+    // reason we don't use strum's enum to string generator is for custom overrides
     fn name(&self) -> &'static str {
         match *self {
             BpfHelper::Unspec => "bpf_unspec",

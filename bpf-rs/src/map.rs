@@ -79,13 +79,12 @@ impl StaticName for MapType {
     fn name(&self) -> &'static str {
         let name_ptr = unsafe { libbpf_sys::libbpf_bpf_map_type_str((*self).into()) };
         if name_ptr.is_null() {
-            panic!("map type enum value unknown to libbpf");
+            panic!("Map type enum value unknown to libbpf");
         }
 
-        match unsafe { CStr::from_ptr(name_ptr) }.to_str() {
-            Ok(name) => name,
-            Err(err) => panic!("map type name had invalid utf8: {}", err),
-        }
+        unsafe { CStr::from_ptr(name_ptr) }
+            .to_str()
+            .expect("Map type name has invalid utf8")
     }
 }
 
