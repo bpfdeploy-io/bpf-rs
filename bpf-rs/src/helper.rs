@@ -1,11 +1,12 @@
+use num_enum::{IntoPrimitive, TryFromPrimitive};
+use std::fmt::Debug;
+use strum_macros::EnumIter;
+
+use crate::StaticName;
+
 use bpf_rs_macros::Display;
 #[cfg(feature = "serde")]
 use bpf_rs_macros::SerializeFromDisplay;
-
-use crate::StaticName;
-use libbpf_sys::__BPF_FUNC_MAX_ID;
-use num_enum::{IntoPrimitive, TryFromPrimitive};
-use std::fmt::Debug;
 
 /// eBPF helper functions. See [`bpf-helpers(7)`](https://man7.org/linux/man-pages/man7/bpf-helpers.7.html)
 ///
@@ -14,11 +15,13 @@ use std::fmt::Debug;
 /// [`__BPF_FUNC_MAX_ID`](https://github.com/torvalds/linux/blob/672c0c5173427e6b3e2a9bbb7be51ceeec78093a/include/uapi/linux/bpf.h#L5350).
 /// This max limit changes between kernel versions due to the addition of eBPF helper functions.
 ///
-/// For more information on eBPF helper functions, check out (although slightly outdated)
+/// For more information on eBPF helper functions, check out (slightly outdated)
 /// [Marsden's Oracle blog post](https://blogs.oracle.com/linux/post/bpf-in-depth-bpf-helper-functions).
 #[non_exhaustive]
 #[repr(u32)]
-#[derive(Display, Debug, Copy, Clone, Hash, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
+#[derive(
+    Display, Debug, Copy, Clone, Hash, PartialEq, Eq, TryFromPrimitive, IntoPrimitive, EnumIter,
+)]
 #[cfg_attr(feature = "serde", derive(SerializeFromDisplay))]
 pub enum BpfHelper {
     Unspec = 0,
@@ -233,12 +236,22 @@ pub enum BpfHelper {
 }
 
 impl BpfHelper {
+    /// Creates an ordered iterator
+    ///
+    /// Order here is based on the ascending int ids used to represent the helper
+    /// functions within the kernel. For most cases, this ordering property isn't
+    /// needed.
+    ///
+    /// **Note**: Skips `unspec` helper since it's an invalid function
     pub fn iter() -> impl Iterator<Item = BpfHelper> {
-        BpfHelperIter::new()
+        let mut iter = <Self as strum::IntoEnumIterator>::iter();
+        iter.next();
+        iter
     }
 }
 
 impl StaticName for BpfHelper {
+    // libbpf doesn't have a libbpf_*_str util for bpf helper functions
     fn name(&self) -> &'static str {
         match *self {
             BpfHelper::Unspec => "bpf_unspec",
@@ -454,32 +467,20 @@ impl StaticName for BpfHelper {
     }
 }
 
-/// Iterator for the eBPF helper functions
-struct BpfHelperIter(u32);
+#[cfg(test)]
+mod tests {
+    use crate::BpfHelper;
 
-impl BpfHelperIter {
-    /// Creates an ordered iterator
-    ///
-    /// Order here is based on the ascending int ids used to represent the helper
-    /// functions within the kernel. For most cases, this ordering property isn't
-    /// needed.
-    ///
-    /// **Note**: Skips `unspec` helper since it's an invalid function
-    pub fn new() -> Self {
-        Self(1)
-    }
-}
+    #[test]
+    fn test_helpers() {
+        assert_eq!(
+            u32::from(BpfHelper::KtimeGetTaiNs) + 1,
+            libbpf_sys::__BPF_FUNC_MAX_ID
+        );
 
-impl Iterator for BpfHelperIter {
-    type Item = BpfHelper;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let next = self.0;
-        if next >= __BPF_FUNC_MAX_ID {
-            None
-        } else {
-            self.0 += 1;
-            BpfHelper::try_from_primitive(next).ok()
-        }
+        assert_eq!(
+            u32::try_from(BpfHelper::iter().count()).unwrap(),
+            libbpf_sys::__BPF_FUNC_MAX_ID - 1
+        );
     }
 }
