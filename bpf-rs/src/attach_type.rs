@@ -60,7 +60,7 @@ pub enum AttachType {
 }
 
 impl AttachType {
-    pub fn iter() -> AttachTypeIter {
+    pub fn iter() -> impl Iterator<Item = AttachType> {
         // To prevent having library users need to import this trait
         <Self as strum::IntoEnumIterator>::iter()
     }
