@@ -3,7 +3,7 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::{ffi::CStr, os::raw, ptr, time::Duration};
 use strum_macros::EnumIter;
 
-use crate::{BpfHelper, Error, StaticName};
+use crate::{BpfHelper, BpfObjId, Error, StaticName};
 
 use bpf_rs_macros::Display;
 #[cfg(feature = "serde")]
@@ -129,7 +129,7 @@ pub struct ProgramInfo {
     /// Unique here meaning since the boot time of the machine. The counter used
     /// to generate these identifiers resets back to 0 to reboot and the identifiers
     /// are reused.
-    pub id: u32,
+    pub id: BpfObjId,
     /// The amount of instructions that were JIT-ed.
     ///
     /// This is useful when attempting to dump the JIT code of the program to

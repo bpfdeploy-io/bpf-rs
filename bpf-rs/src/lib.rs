@@ -26,6 +26,8 @@ pub use program::{ProgramInfo, ProgramLicense, ProgramType};
 use std::fmt::Debug;
 use thiserror::Error as ThisError;
 
+type BpfObjId = u32;
+
 /// Propagates error variants from libbpf-sys
 #[derive(ThisError, Debug)]
 pub enum Error {
@@ -42,42 +44,4 @@ pub enum Error {
 // can only export macros
 trait StaticName {
     fn name(&self) -> &'static str;
-}
-
-#[cfg(test)]
-mod tests {
-    use super::libbpf_sys as sys;
-    use super::*;
-
-    #[test]
-    fn bpf_helper_iter() {
-        let count = BpfHelper::iter()
-            .map(|helper| {
-                let name = helper.name();
-                assert_ne!(name, "<utf8err>");
-                assert_ne!(name, "<unknown>");
-            })
-            .count();
-
-        assert_eq!(count, usize::try_from(sys::__BPF_FUNC_MAX_ID - 1).unwrap());
-
-        // Because libbpf-sys's bindings generate consts we can't loop (although
-        // maybe we should have this ability?) and verify that u32 values match
-        // up with our helpers. We sample a few here
-        assert_eq!(
-            u32::from(BpfHelper::GetPrandomU32),
-            sys::BPF_FUNC_get_prandom_u32
-        );
-        assert_eq!(
-            u32::from(BpfHelper::TraceVprintk),
-            sys::BPF_FUNC_trace_vprintk
-        );
-        assert_eq!(
-            u32::from(BpfHelper::TcpRawGenSyncookieIpv6),
-            sys::BPF_FUNC_tcp_raw_gen_syncookie_ipv6
-        );
-
-        let invalid_helper = BpfHelper::try_from(sys::__BPF_FUNC_MAX_ID);
-        assert!(invalid_helper.is_err());
-    }
 }

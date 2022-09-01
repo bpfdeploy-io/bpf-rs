@@ -483,5 +483,24 @@ mod tests {
             u32::try_from(BpfHelper::iter().count()).unwrap(),
             libbpf_sys::__BPF_FUNC_MAX_ID - 1
         );
+
+        // Because libbpf-sys's bindings generate consts we can't loop (although
+        // maybe we should have this ability?) and verify that u32 values match
+        // up with our helpers. We sample a few here
+        assert_eq!(
+            u32::from(BpfHelper::GetPrandomU32),
+            libbpf_sys::BPF_FUNC_get_prandom_u32
+        );
+        assert_eq!(
+            u32::from(BpfHelper::TraceVprintk),
+            libbpf_sys::BPF_FUNC_trace_vprintk
+        );
+        assert_eq!(
+            u32::from(BpfHelper::TcpRawGenSyncookieIpv6),
+            libbpf_sys::BPF_FUNC_tcp_raw_gen_syncookie_ipv6
+        );
+
+        let invalid_helper = BpfHelper::try_from(libbpf_sys::__BPF_FUNC_MAX_ID);
+        assert!(invalid_helper.is_err());
     }
 }
