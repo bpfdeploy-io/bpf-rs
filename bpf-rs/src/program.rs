@@ -82,11 +82,14 @@ impl ProgramType {
     ///
     /// **Note**: Skips [`ProgramType::Unspec`] since it's an invalid program type
     pub fn iter() -> impl Iterator<Item = ProgramType> {
-        <Self as strum::IntoEnumIterator>::iter()
+        let mut iter = <Self as strum::IntoEnumIterator>::iter();
+        iter.next(); // Skip Unspec
+        iter
     }
 }
 
 impl StaticName for ProgramType {
+    /// A human-readable name of the eBPF program type.
     fn name(&self) -> &'static str {
         let name_ptr = unsafe { libbpf_bpf_prog_type_str((*self).into()) };
         if name_ptr.is_null() {
@@ -221,6 +224,9 @@ mod tests {
         ProgramType::iter().for_each(|ty| {
             assert!(!format!("{}", ty).is_empty());
         });
+
+        // Confirm that the first in ProgramType::iter() is NOT unspec
+        assert_ne!(ProgramType::iter().next().unwrap(), ProgramType::Unspec);
     }
 
     #[test]

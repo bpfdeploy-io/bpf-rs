@@ -68,7 +68,9 @@ impl MapType {
     ///
     /// **Note**: Skips [`MapType::Unspec`] since it's an invalid map type
     pub fn iter() -> impl Iterator<Item = MapType> {
-        <Self as strum::IntoEnumIterator>::iter()
+        let mut iter = <Self as strum::IntoEnumIterator>::iter();
+        iter.next(); // Skip Unspec
+        iter
     }
 }
 
@@ -99,5 +101,8 @@ mod tests {
         );
 
         MapType::iter().for_each(|ty| assert!(!format!("{}", ty).is_empty()));
+
+        // Confirm that the first in MapType::iter() is NOT unspec
+        assert_ne!(MapType::iter().next().unwrap(), MapType::Unspec);
     }
 }
