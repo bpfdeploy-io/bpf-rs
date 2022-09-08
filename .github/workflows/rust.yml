@@ -10,8 +10,24 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build-ubuntu20:
     runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+    - name: install deps for libbpf
+      run: sudo apt-get install -y clang-12 libelf-dev zlib1g-dev
+    - name: cargo fmt
+      run: cargo fmt --check
+    - name: cargo clippy
+      run: cargo clippy --tests -- -D warnings
+    - name: cargo tests (sudo)
+      run: sudo -E "PATH=$PATH" $(which cargo) test --verbose --workspace --all-features
+    - name: cargo build
+      run: cargo build --release --verbose --workspace --all-features
+
+  build-ubuntu22:
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
     - uses: dtolnay/rust-toolchain@stable
