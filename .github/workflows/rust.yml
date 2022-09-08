@@ -11,17 +11,18 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v3
     - uses: dtolnay/rust-toolchain@stable
-    - name: deps for libbpf
+    - name: install deps for libbpf
       run: sudo apt-get install -y clang-12 libelf-dev zlib1g-dev
-    - name: build
-      run: cargo build --verbose --workspace --all-features
-    - name: sudo tests
-      run: sudo -E "PATH=$PATH" $(which cargo) test --verbose --workspace --all-features
-    - name: rustfmt
+    - name: cargo fmt
       run: cargo fmt --check
-    - name: clippy
+    - name: cargo clippy
       run: cargo clippy --tests -- -D warnings
+    - name: cargo tests (sudo)
+      run: sudo -E "PATH=$PATH" $(which cargo) test --verbose --workspace --all-features
+    - name: cargo build
+      run: cargo build --release --verbose --workspace --all-features
+
