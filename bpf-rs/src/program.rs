@@ -1,106 +1,121 @@
-use libbpf_sys::{libbpf_bpf_prog_type_str, libbpf_probe_bpf_helper, libbpf_probe_bpf_prog_type};
-use num_enum::{IntoPrimitive, TryFromPrimitive};
-use std::{ffi::CStr, os::raw, ptr, time::Duration};
-use strum_macros::EnumIter;
+use std::{ffi::CStr, os::raw, time::Duration};
 
-use crate::{BpfHelper, BpfObjId, Error, StaticName};
+use crate::BpfObjId;
 
-use bpf_rs_macros::Display;
-#[cfg(feature = "serde")]
-use bpf_rs_macros::SerializeFromDisplay;
+// HACK: The reason we have to do this hack is because of
+// https://github.com/Peternator7/strum/issues/237
+// strum generates a struct that by defaults propagates the same visibility
+// as the original enum. We don't want that and it isn't configurable so we
+// wrap it in a private module and re-export what we want public.
+mod private_hack {
+    use libbpf_sys::{
+        libbpf_bpf_prog_type_str, libbpf_probe_bpf_helper, libbpf_probe_bpf_prog_type,
+    };
+    use num_enum::{IntoPrimitive, TryFromPrimitive};
+    use std::{ffi::CStr, ptr};
+    use strum_macros::EnumIter;
 
-#[non_exhaustive]
-#[repr(u32)]
-#[derive(
-    Debug, Display, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash, EnumIter,
-)]
-#[cfg_attr(feature = "serde", derive(SerializeFromDisplay))]
-pub enum ProgramType {
-    Unspec = 0,
-    SocketFilter,
-    Kprobe,
-    SchedCls,
-    SchedAct,
-    Tracepoint,
-    Xdp,
-    PerfEvent,
-    CgroupSkb,
-    CgroupSock,
-    LwtIn,
-    LwtOut,
-    LwtXmit,
-    SockOps,
-    SkSkb,
-    CgroupDevice,
-    SkMsg,
-    RawTracepoint,
-    CgroupSockAddr,
-    LwtSeg6local,
-    LircMode2,
-    SkReuseport,
-    FlowDissector,
-    CgroupSysctl,
-    RawTracepointWritable,
-    CgroupSockopt,
-    Tracing,
-    StructOps,
-    Ext,
-    Lsm,
-    SkLookup,
-    Syscall,
-}
+    use crate::{BpfHelper, Error, StaticName};
 
-impl ProgramType {
-    /// Determines if the eBPF program type is supported on the current platform
-    pub fn probe(&self) -> Result<bool, Error> {
-        match unsafe { libbpf_probe_bpf_prog_type((*self).into(), ptr::null()) } {
-            negative if negative < 0 => Err(Error::Code(negative)),
-            0 => Ok(false),
-            1 => Ok(true),
-            positive if positive > 1 => Err(Error::Unknown(positive)),
-            _ => unreachable!(),
+    use bpf_rs_macros::Display;
+    #[cfg(feature = "serde")]
+    use bpf_rs_macros::SerializeFromDisplay;
+
+    #[non_exhaustive]
+    #[repr(u32)]
+    #[derive(
+        Debug, Display, TryFromPrimitive, IntoPrimitive, Clone, Copy, PartialEq, Eq, Hash, EnumIter,
+    )]
+    #[cfg_attr(feature = "serde", derive(SerializeFromDisplay))]
+    pub enum ProgramType {
+        Unspec = 0,
+        SocketFilter,
+        Kprobe,
+        SchedCls,
+        SchedAct,
+        Tracepoint,
+        Xdp,
+        PerfEvent,
+        CgroupSkb,
+        CgroupSock,
+        LwtIn,
+        LwtOut,
+        LwtXmit,
+        SockOps,
+        SkSkb,
+        CgroupDevice,
+        SkMsg,
+        RawTracepoint,
+        CgroupSockAddr,
+        LwtSeg6local,
+        LircMode2,
+        SkReuseport,
+        FlowDissector,
+        CgroupSysctl,
+        RawTracepointWritable,
+        CgroupSockopt,
+        Tracing,
+        StructOps,
+        Ext,
+        Lsm,
+        SkLookup,
+        Syscall,
+    }
+
+    impl ProgramType {
+        /// Determines if the eBPF program type is supported on the current platform
+        pub fn probe(&self) -> Result<bool, Error> {
+            match unsafe { libbpf_probe_bpf_prog_type((*self).into(), ptr::null()) } {
+                negative if negative < 0 => Err(Error::Code(negative)),
+                0 => Ok(false),
+                1 => Ok(true),
+                positive if positive > 1 => Err(Error::Unknown(positive)),
+                _ => unreachable!(),
+            }
+        }
+
+        /// Determines if the eBPF program helper function can be used my supported program types.
+        ///
+        /// **Note**: Due to libbpf's `libbpf_probe_bpf_helper`, this may return Ok(true) for unsupported program
+        /// types. It is recommended to verify if the program type is supported before probing for helper
+        /// support.
+        pub fn probe_helper(&self, helper: BpfHelper) -> Result<bool, Error> {
+            match unsafe { libbpf_probe_bpf_helper((*self).into(), helper.into(), ptr::null()) } {
+                negative if negative < 0 => Err(Error::Code(negative)),
+                0 => Ok(false),
+                1 => Ok(true),
+                positive if positive > 1 => Err(Error::Unknown(positive)),
+                _ => unreachable!(),
+            }
+        }
+
+        /// Returns an ordered iterator over the [`ProgramType`] variants. The order is determined by the kernel
+        /// header's [enum values](https://github.com/torvalds/linux/blob/b253435746d9a4a701b5f09211b9c14d3370d0da/include/uapi/linux/bpf.h#L922).
+        ///
+        /// **Note**: Skips [`ProgramType::Unspec`] since it's an invalid program type
+        pub fn iter() -> impl Iterator<Item = ProgramType> {
+            let mut iter = <Self as strum::IntoEnumIterator>::iter();
+            iter.next(); // Skip Unspec
+            iter
         }
     }
 
-    /// Determines if the eBPF program helper function can be used my supported program types.
-    ///
-    /// **Note**: Due to libbpf's `libbpf_probe_bpf_helper`, this may return Ok(true) for unsupported program
-    /// types. It is recommended to verify if the program type is supported before probing for helper
-    /// support.
-    pub fn probe_helper(&self, helper: BpfHelper) -> Result<bool, Error> {
-        match unsafe { libbpf_probe_bpf_helper((*self).into(), helper.into(), ptr::null()) } {
-            negative if negative < 0 => Err(Error::Code(negative)),
-            0 => Ok(false),
-            1 => Ok(true),
-            positive if positive > 1 => Err(Error::Unknown(positive)),
-            _ => unreachable!(),
-        }
-    }
+    impl StaticName for ProgramType {
+        /// A human-readable name of the eBPF program type.
+        fn name(&self) -> &'static str {
+            let name_ptr = unsafe { libbpf_bpf_prog_type_str((*self).into()) };
+            if name_ptr.is_null() {
+                panic!("Program type enum value not understood by libbpf_bpf_prog_type_str");
+            }
 
-    /// Returns an ordered iterator over the [`ProgramType`] variants. The order is determined by the kernel
-    /// header's [enum values](https://github.com/torvalds/linux/blob/b253435746d9a4a701b5f09211b9c14d3370d0da/include/uapi/linux/bpf.h#L922).
-    ///
-    /// **Note**: Skips [`ProgramType::Unspec`] since it's an invalid program type
-    pub fn iter() -> impl Iterator<Item = ProgramType> {
-        let mut iter = <Self as strum::IntoEnumIterator>::iter();
-        iter.next(); // Skip Unspec
-        iter
+            unsafe { CStr::from_ptr(name_ptr) }
+                .to_str()
+                .expect("Program type name has invalid utf8 character: {}")
+        }
     }
 }
 
-impl StaticName for ProgramType {
-    /// A human-readable name of the eBPF program type.
-    fn name(&self) -> &'static str {
-        let name_ptr = unsafe { libbpf_bpf_prog_type_str((*self).into()) };
-        if name_ptr.is_null() {
-            panic!("Program type enum value not understood by libbpf_bpf_prog_type_str");
-        }
-
-        unsafe { CStr::from_ptr(name_ptr) }
-            .to_str()
-            .expect("Program type name has invalid utf8 character: {}")
-    }
-}
+pub use private_hack::ProgramType;
 
 /// eBPF program object info. Similar to (but not the same) kernel header's
 /// [struct bpf_prog_info](https://github.com/torvalds/linux/blob/672c0c5173427e6b3e2a9bbb7be51ceeec78093a/include/uapi/linux/bpf.h#L5840)
