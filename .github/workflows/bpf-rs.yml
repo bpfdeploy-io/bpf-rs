@@ -2,7 +2,8 @@ name: bpf-rs
 
 on:
   push:
-    branches: [ main, next ]
+    branches:
+      - '**' # matches every branch
   pull_request:
     branches: [ main, next ]
 
