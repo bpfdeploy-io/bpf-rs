@@ -42,10 +42,10 @@ The development here was based on a Debian-based distro on the x86_64 arch again
 
 ### Testing
 
-By default, cargo does not enable any features during tests so be thorough, you might want to run tests enabling specific features or all:
+This project uses [just](https://github.com/casey/just) as its task runner. You can run tests locally with:
 
 ```bash
-$ cargo test --all-features
+$ just test
 ```
 
 ## Licenses
