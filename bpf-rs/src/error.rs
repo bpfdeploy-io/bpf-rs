@@ -18,14 +18,10 @@ pub(crate) fn from_libbpf_int(result: RawInt) -> Result<RawInt, RawInt> {
 }
 
 // If we know that the negative error code returned from libbpf will be
-// a standard errno, let's return that. Note that we are forcing dependants to
-// also use nix
+// a standard errno, let's return that enum variant. Note that
+// we are forcing dependants to also use the nix crate
 pub(crate) fn from_libbpf_errno(result: RawInt) -> Result<RawInt, Errno> {
-    if result < 0 {
-        return Err(nix::errno::from_i32(-result));
-    }
-
-    Ok(result)
+    from_libbpf_int(result).map_err(nix::errno::from_i32)
 }
 
 // In libbpf v1, ptr-returning functions will return NULL on error but set
