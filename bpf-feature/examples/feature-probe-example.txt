@@ -321,6 +321,7 @@ eBPF helpers supported for program type sched_cls:
 	- bpf_skc_to_unix_sock
 	- bpf_loop
 	- bpf_strncmp
+	- bpf_skb_set_tstamp
 eBPF helpers supported for program type sched_act:
 	- bpf_map_lookup_elem
 	- bpf_map_update_elem
@@ -419,6 +420,7 @@ eBPF helpers supported for program type sched_act:
 	- bpf_skc_to_unix_sock
 	- bpf_loop
 	- bpf_strncmp
+	- bpf_skb_set_tstamp
 eBPF helpers supported for program type tracepoint:
 	- bpf_map_lookup_elem
 	- bpf_map_update_elem
@@ -542,6 +544,9 @@ eBPF helpers supported for program type xdp:
 	- bpf_skc_to_unix_sock
 	- bpf_loop
 	- bpf_strncmp
+	- bpf_xdp_get_buff_len
+	- bpf_xdp_load_bytes
+	- bpf_xdp_store_bytes
 eBPF helpers supported for program type perf_event:
 	- bpf_map_lookup_elem
 	- bpf_map_update_elem
@@ -1066,6 +1071,8 @@ eBPF helpers supported for program type cgroup_device:
 	- bpf_task_pt_regs
 	- bpf_loop
 	- bpf_strncmp
+	- bpf_get_retval
+	- bpf_set_retval
 eBPF helpers supported for program type sk_msg:
 	- bpf_map_lookup_elem
 	- bpf_map_update_elem
@@ -1454,6 +1461,8 @@ eBPF helpers supported for program type cgroup_sysctl:
 	- bpf_task_pt_regs
 	- bpf_loop
 	- bpf_strncmp
+	- bpf_get_retval
+	- bpf_set_retval
 eBPF helpers supported for program type raw_tracepoint_writable:
 	- bpf_map_lookup_elem
 	- bpf_map_update_elem
@@ -1562,6 +1571,8 @@ eBPF helpers supported for program type cgroup_sockopt:
 	- bpf_task_pt_regs
 	- bpf_loop
 	- bpf_strncmp
+	- bpf_get_retval
+	- bpf_set_retval
 eBPF helpers supported for program type tracing:
 	Could not determine which helpers are available
 eBPF helpers supported for program type struct_ops:
@@ -1698,6 +1709,8 @@ eBPF helpers supported for program type syscall:
 	- bpf_find_vma
 	- bpf_loop
 	- bpf_strncmp
+	- bpf_xdp_get_buff_len
+	- bpf_copy_from_user_task
 
 Scanning miscellaneous eBPF features...
 Large program size limit is available

@@ -38,7 +38,9 @@ A work-in-progress library to aid in the dumping of eBPF programs and maps.
 
 ## Contributing & Testing
 
-The development here was based on a Debian-based distro on the x86_64 arch against a v5.15 Linux kernel version. The eBPF landscape is progressing quickly but with an eye towards backward compatibility. We aim to do the same so if an issue occurs in your environment, please feel free to file an issue.
+The development here was based on a Debian-based distro on the x86_64 arch against a v5.18 Linux kernel version.
+The eBPF landscape is progressing quickly but with an eye towards backward compatibility.
+We aim to do the same so if an issue occurs in your environment, please feel free to file an issue.
 
 ### Testing
 

@@ -26,6 +26,11 @@ fmt:
 clippy:
     cargo clippy --tests -- -D warnings
 
+# Depends on the cargo runner being sudo
+examples-snapshot:
+    cd ./bpf-feature && (cargo run --example feature-probe --all-features > ./examples/feature-probe-example.txt)
+    cd ./bpf-feature && (cargo run --example json-dump --all-features > ./examples/json-dump-example.json)
+
 alias b := build
 alias r := run
 alias t := test
