@@ -82,6 +82,9 @@ pub enum KernelConfigError {
     /// IO error reading the config file
     #[error("can't read from file")]
     ReadFail,
+    // If an internal errno is encountered
+    #[error("internal unknown error: {0}")]
+    Unknown(String),
 }
 
 /// Variant of possible config values (e.g. `y`, `n`, `m` etc.)
@@ -132,18 +135,21 @@ pub struct KernelConfig {
 
 impl KernelConfig {
     fn probe_kernel_config() -> Result<KernelConfigValues, KernelConfigError> {
-        let utsn = utsname::uname();
+        let utsn = utsname::uname()
+            .map_err(|errno| KernelConfigError::Unknown(errno.desc().to_string()))?;
 
-        let config_reader: Box<dyn BufRead> =
-            match File::open(format!("/boot/config-{}", utsn.release())) {
-                Err(_) => {
-                    let compressed_config =
-                        File::open("/proc/config.gz").map_err(|_| KernelConfigError::NotFound)?;
-                    let decoder = GzDecoder::new(BufReader::new(compressed_config));
-                    Box::new(BufReader::new(decoder))
-                }
-                Ok(f) => Box::new(BufReader::new(f)),
-            };
+        let config_reader: Box<dyn BufRead> = match File::open(format!(
+            "/boot/config-{}",
+            utsn.release().to_str().expect("utf8 error")
+        )) {
+            Err(_) => {
+                let compressed_config =
+                    File::open("/proc/config.gz").map_err(|_| KernelConfigError::NotFound)?;
+                let decoder = GzDecoder::new(BufReader::new(compressed_config));
+                Box::new(BufReader::new(decoder))
+            }
+            Ok(f) => Box::new(BufReader::new(f)),
+        };
 
         let mut lines_iter = config_reader.lines();
         let _ = lines_iter
