@@ -9,7 +9,7 @@ mod private_hack {
     use std::{ffi::CStr, fmt::Debug, ptr};
     use strum_macros::EnumIter;
 
-    use crate::{Error, StaticName};
+    use crate::{error::{self, Errno}, StaticName};
 
     use bpf_rs_macros::Display;
     #[cfg(feature = "serde")]
@@ -59,12 +59,12 @@ mod private_hack {
 
     impl MapType {
         /// Determines if the eBPF map type is supported on the current platform
-        pub fn probe(&self) -> Result<bool, Error> {
-            match unsafe { libbpf_probe_bpf_map_type((*self).into(), ptr::null()) } {
-                negative if negative < 0 => Err(Error::Code(negative)),
+        pub fn probe(&self) -> Result<bool, Errno> {
+            match error::from_libbpf_errno(unsafe {
+                libbpf_probe_bpf_map_type((*self).into(), ptr::null())
+            })? {
                 0 => Ok(false),
                 1 => Ok(true),
-                positive if positive > 1 => Err(Error::Unknown(positive)),
                 _ => unreachable!(),
             }
         }

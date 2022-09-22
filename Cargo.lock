@@ -27,7 +27,7 @@ dependencies = [
  "bpf-rs",
  "bpf-rs-macros",
  "flate2",
- "nix",
+ "nix 0.23.1",
  "serde",
  "serde_json",
  "thiserror",
@@ -37,9 +37,11 @@ dependencies = [
 name = "bpf-rs"
 version = "0.3.0"
 dependencies = [
+ "bitflags",
  "bpf-rs-macros",
  "bpfdeploy-libbpf-sys",
  "libbpf-sys",
+ "nix 0.25.0",
  "num_enum",
  "serde",
  "strum",
@@ -123,9 +125,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.121"
+version = "0.2.132"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "efaa7b300f3b5fe8eb6bf21ce3895e1751d9665086af2d64b42f19701015ff4f"
+checksum = "8371e4e5341c3a96db127eb2465ac681ced4c433e01dd0e938adbef26ba93ba5"
 
 [[package]]
 name = "memoffset"
@@ -160,6 +162,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "nix"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e322c04a9e3440c327fca7b6c8a63e6890a32fa2ad689db972425f07e0d22abb"
+dependencies = [
+ "autocfg",
+ "bitflags",
+ "cfg-if",
+ "libc",
+ "memoffset",
+ "pin-utils",
+]
+
+[[package]]
 name = "num_enum"
 version = "0.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -179,6 +195,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "pin-utils"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
 name = "pkg-config"

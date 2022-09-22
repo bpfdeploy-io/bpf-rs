@@ -12,32 +12,19 @@
 //! [libbpf-cargo](https://docs.rs/libbpf-cargo).
 //!
 mod attach_type;
+mod error;
 mod helper;
 pub mod insns;
 mod map;
 mod program;
 
-// Re-exports
+// Re-exports; should consider removing some in future? (breaking change)
 pub use helper::BpfHelper;
 pub use libbpf_sys;
 pub use map::MapType;
 pub use program::{ProgramInfo, ProgramLicense, ProgramType};
 
-use std::fmt::Debug;
-use thiserror::Error as ThisError;
-
 type BpfObjId = u32;
-
-/// Propagates error variants from libbpf-sys
-#[derive(ThisError, Debug)]
-pub enum Error {
-    #[error("errno: {0}")]
-    Errno(i32),
-    #[error("error code: {0}")]
-    Code(i32),
-    #[error("unknown: {0}")]
-    Unknown(i32),
-}
 
 // WARNING: Highly coupled to the proc macro bpf_rs_macros::Derive
 // Trait can't be part of the bpf_rs_macros crate because a proc crate

@@ -15,7 +15,7 @@ mod private_hack {
     use std::{ffi::CStr, ptr};
     use strum_macros::EnumIter;
 
-    use crate::{BpfHelper, Error, StaticName};
+    use crate::{error::{self, Errno}, BpfHelper, StaticName};
 
     use bpf_rs_macros::Display;
     #[cfg(feature = "serde")]
@@ -64,12 +64,12 @@ mod private_hack {
 
     impl ProgramType {
         /// Determines if the eBPF program type is supported on the current platform
-        pub fn probe(&self) -> Result<bool, Error> {
-            match unsafe { libbpf_probe_bpf_prog_type((*self).into(), ptr::null()) } {
-                negative if negative < 0 => Err(Error::Code(negative)),
+        pub fn probe(&self) -> Result<bool, Errno> {
+            match error::from_libbpf_errno(unsafe {
+                libbpf_probe_bpf_prog_type((*self).into(), ptr::null())
+            })? {
                 0 => Ok(false),
                 1 => Ok(true),
-                positive if positive > 1 => Err(Error::Unknown(positive)),
                 _ => unreachable!(),
             }
         }
@@ -79,12 +79,12 @@ mod private_hack {
         /// **Note**: Due to libbpf's `libbpf_probe_bpf_helper`, this may return Ok(true) for unsupported program
         /// types. It is recommended to verify if the program type is supported before probing for helper
         /// support.
-        pub fn probe_helper(&self, helper: BpfHelper) -> Result<bool, Error> {
-            match unsafe { libbpf_probe_bpf_helper((*self).into(), helper.into(), ptr::null()) } {
-                negative if negative < 0 => Err(Error::Code(negative)),
+        pub fn probe_helper(&self, helper: BpfHelper) -> Result<bool, Errno> {
+            match error::from_libbpf_errno(unsafe {
+                libbpf_probe_bpf_helper((*self).into(), helper.into(), ptr::null())
+            })? {
                 0 => Ok(false),
                 1 => Ok(true),
-                positive if positive > 1 => Err(Error::Unknown(positive)),
                 _ => unreachable!(),
             }
         }
