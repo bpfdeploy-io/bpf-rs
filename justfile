@@ -1,6 +1,9 @@
 default:
     @just --list
 
+build:
+    cargo build --all-features
+
 test:
     cd ./bpf-rs && cargo test --all-features
     cd ./bpf-feature && cargo test --all-features
@@ -23,5 +26,6 @@ fmt:
 clippy:
     cargo clippy --tests -- -D warnings
 
+alias b := build
 alias r := run
 alias t := test

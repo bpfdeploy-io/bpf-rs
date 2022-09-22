@@ -15,7 +15,10 @@ mod private_hack {
     use std::{ffi::CStr, ptr};
     use strum_macros::EnumIter;
 
-    use crate::{error::{self, Errno}, BpfHelper, StaticName};
+    use crate::{
+        error::{self, Errno},
+        BpfHelper, StaticName,
+    };
 
     use bpf_rs_macros::Display;
     #[cfg(feature = "serde")]

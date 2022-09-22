@@ -9,7 +9,10 @@ mod private_hack {
     use std::{ffi::CStr, fmt::Debug, ptr};
     use strum_macros::EnumIter;
 
-    use crate::{error::{self, Errno}, StaticName};
+    use crate::{
+        error::{self, Errno},
+        StaticName,
+    };
 
     use bpf_rs_macros::Display;
     #[cfg(feature = "serde")]
