@@ -27,7 +27,7 @@ dependencies = [
  "bpf-rs",
  "bpf-rs-macros",
  "flate2",
- "nix 0.23.1",
+ "nix",
  "serde",
  "serde_json",
  "thiserror",
@@ -41,7 +41,7 @@ dependencies = [
  "bpf-rs-macros",
  "bpfdeploy-libbpf-sys",
  "libbpf-sys",
- "nix 0.25.0",
+ "nix",
  "num_enum",
  "serde",
  "strum",
@@ -146,19 +146,6 @@ checksum = "a92518e98c078586bc6c934028adcca4c92a53d6a958196de835170a01d84e4b"
 dependencies = [
  "adler",
  "autocfg",
-]
-
-[[package]]
-name = "nix"
-version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f866317acbd3a240710c63f065ffb1e4fd466259045ccb504130b7f668f35c6"
-dependencies = [
- "bitflags",
- "cc",
- "cfg-if",
- "libc",
- "memoffset",
 ]
 
 [[package]]

@@ -3,7 +3,7 @@
 //! This feature set can be used to determine which eBPF program types, maps &
 //! helpers are available to your runtime.
 use bpf_rs::libbpf_sys::bpf_prog_load;
-use bpf_rs::{BpfHelper, Error as BpfSysError, MapType, ProgramType};
+use bpf_rs::{BpfHelper, MapType, ProgramType};
 use nix::errno::Errno;
 use std::collections::HashMap;
 use std::ptr;
@@ -25,10 +25,10 @@ pub enum BpfError {
     /// not available
     #[error("no bpf syscall on system")]
     NoBpfSyscall,
-    /// If an error occurs during probing of a feature, we propagate it to the
-    /// client
-    #[error("bpf-rs::Error: {0}")]
-    ProbeErr(#[from] BpfSysError),
+    /// If a known errno occurs, we propagate it to the client
+    // TODO: Should the end user actually care about errno?
+    #[error("errno: {0}")]
+    Errno(#[from] nix::errno::Errno),
 }
 
 /// Results for each eBPF detection technique
@@ -85,18 +85,13 @@ impl Bpf {
 
     fn probe_program_types() -> HashMap<ProgramType, Result<bool, BpfError>> {
         ProgramType::iter()
-            .map(|program_type| {
-                (
-                    program_type,
-                    program_type.probe().map_err(BpfError::ProbeErr),
-                )
-            })
+            .map(|program_type| (program_type, program_type.probe().map_err(BpfError::Errno)))
             .collect()
     }
 
     fn probe_map_types() -> HashMap<MapType, Result<bool, BpfError>> {
         MapType::iter()
-            .map(|map_type| (map_type, map_type.probe().map_err(BpfError::ProbeErr)))
+            .map(|map_type| (map_type, map_type.probe().map_err(BpfError::Errno)))
             .collect()
     }
 
@@ -122,7 +117,7 @@ impl Bpf {
                                 match program_type.probe_helper(helper) {
                                     Ok(true) => Some(Ok(helper)),
                                     Ok(false) => None,
-                                    Err(err) => Some(Err(BpfError::ProbeErr(err))),
+                                    Err(err) => Some(Err(BpfError::Errno(err))),
                                 }
                             })
                             .collect();
