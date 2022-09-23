@@ -11,7 +11,8 @@
 //! and maps. For that, we recommend [libbpf-rs](https://docs.rs/libbpf-rs) and
 //! [libbpf-cargo](https://docs.rs/libbpf-cargo).
 //!
-mod attach_type;
+pub mod attach_type;
+pub mod descriptor;
 mod error;
 mod helper;
 pub mod insns;
