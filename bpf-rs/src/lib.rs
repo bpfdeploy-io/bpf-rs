@@ -25,7 +25,9 @@ pub use libbpf_sys;
 pub use map::MapType;
 pub use program::{ProgramInfo, ProgramLicense, ProgramType};
 
-type BpfObjId = u32;
+pub type BpfObjId = u32;
+pub type BpfProgramId = BpfObjId;
+pub type BpfMapId = BpfObjId;
 
 // WARNING: Highly coupled to the proc macro bpf_rs_macros::Derive
 // Trait can't be part of the bpf_rs_macros crate because a proc crate

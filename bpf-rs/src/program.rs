@@ -1,6 +1,6 @@
 use std::{ffi::CStr, os::raw, time::Duration};
 
-use crate::BpfObjId;
+use crate::BpfProgramId;
 
 // HACK: The reason we have to do this hack is because of
 // https://github.com/Peternator7/strum/issues/237
@@ -147,7 +147,7 @@ pub struct ProgramInfo {
     /// Unique here meaning since the boot time of the machine. The counter used
     /// to generate these identifiers resets back to 0 to reboot and the identifiers
     /// are reused.
-    pub id: BpfObjId,
+    pub id: BpfProgramId,
     /// The amount of instructions that were JIT-ed.
     ///
     /// This is useful when attempting to dump the JIT code of the program to

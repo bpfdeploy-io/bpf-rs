@@ -7,7 +7,7 @@ use std::{collections::HashMap, os::unix::prelude::*, ptr};
 use crate::{
     attach_type,
     error::{self, Errno},
-    BpfObjId,
+    BpfProgramId,
 };
 
 bitflags! {
@@ -24,7 +24,7 @@ impl KernelDescriptor<'_> {
         query_flags: QueryFlags,
         attach_flags: u32,
         program_count: u32,
-        program_ids: &mut Vec<BpfObjId>,
+        program_ids: &mut Vec<BpfProgramId>,
     ) -> libbpf_sys::bpf_prog_query_opts {
         libbpf_sys::bpf_prog_query_opts {
             sz: std::mem::size_of::<libbpf_sys::bpf_prog_query_opts>()
@@ -43,7 +43,7 @@ impl KernelDescriptor<'_> {
         &self,
         attach_type: attach_type::AttachType,
         query_flags: QueryFlags,
-    ) -> Result<Vec<BpfObjId>, Errno> {
+    ) -> Result<Vec<BpfProgramId>, Errno> {
         // Grab count of programs first; estimated since it might change by next syscall
         let mut program_count: u32 = 0;
 
@@ -83,7 +83,7 @@ impl KernelDescriptor<'_> {
     pub fn attached_program_ids(
         &self,
         query_flags: QueryFlags,
-    ) -> HashMap<attach_type::AttachType, Result<Vec<BpfObjId>, Errno>> {
+    ) -> HashMap<attach_type::AttachType, Result<Vec<BpfProgramId>, Errno>> {
         attach_type::AttachType::iter()
             .flat_map(|attach_type| {
                 match self.attached_program_ids_by_type(attach_type, query_flags) {
