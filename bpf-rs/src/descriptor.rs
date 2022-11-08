@@ -5,15 +5,15 @@ use bitflags::bitflags;
 use std::{collections::HashMap, os::unix::prelude::*, ptr};
 
 use crate::{
-    attach_type,
+    attach_type::{self, AttachFlags},
     error::{self, Errno},
     BpfProgramId,
 };
 
 bitflags! {
-    pub struct QueryFlags: u32 {
+    pub struct QueryFlags: std::os::raw::c_uint {
         const NONE = 0;
-        const EFFECTIVE = 1;
+        const EFFECTIVE = 1 << 0;
     }
 }
 
@@ -38,12 +38,13 @@ impl KernelDescriptor<'_> {
             ..Default::default()
         }
     }
-
+    // As of early 2022, you can have per-program attach flags so we'll have to
+    // change this API eventually
     pub fn attached_program_ids_by_type(
         &self,
         attach_type: attach_type::AttachType,
         query_flags: QueryFlags,
-    ) -> Result<Vec<BpfProgramId>, Errno> {
+    ) -> Result<(AttachFlags, Vec<BpfProgramId>), Errno> {
         // Grab count of programs first; estimated since it might change by next syscall
         let mut program_count: u32 = 0;
 
@@ -59,7 +60,7 @@ impl KernelDescriptor<'_> {
         })?;
 
         if program_count == 0 {
-            return Ok(Vec::default());
+            return Ok((AttachFlags::NONE, Vec::default()));
         }
 
         let mut program_ids = vec![0u32; program_count as usize];
@@ -77,22 +78,25 @@ impl KernelDescriptor<'_> {
         // since count might have changed between syscalls
         program_ids.truncate(opts_raw.prog_cnt as usize);
 
-        Ok(program_ids)
+        let attach_flags =
+            AttachFlags::from_bits(opts_raw.attach_flags).unwrap_or(AttachFlags::NONE);
+
+        Ok((attach_flags, program_ids))
     }
 
     pub fn attached_program_ids(
         &self,
         query_flags: QueryFlags,
-    ) -> HashMap<attach_type::AttachType, Result<Vec<BpfProgramId>, Errno>> {
+    ) -> HashMap<attach_type::AttachType, Result<(AttachFlags, Vec<BpfProgramId>), Errno>> {
         attach_type::AttachType::iter()
             .flat_map(|attach_type| {
                 match self.attached_program_ids_by_type(attach_type, query_flags) {
-                    Ok(program_ids) => {
+                    Ok((attach_flags, program_ids)) => {
                         if program_ids.is_empty() {
                             return None;
                         }
 
-                        Some((attach_type, Ok(program_ids)))
+                        Some((attach_type, Ok((attach_flags, program_ids))))
                     }
                     Err(err) => {
                         if err == nix::errno::Errno::EINVAL {
@@ -114,13 +118,13 @@ mod tests {
     use std::os::unix::prelude::*;
 
     #[test]
-    #[ignore = "should create a cgroup instead of assuming there is one"]
+    #[ignore = "assumes environment"]
     fn test_kernel_descriptor() {
         let cgroup_file = std::fs::File::open("/sys/fs/cgroup/system.slice/upower.service")
             .expect("systemd's upower.service cgroup file does not exist");
         let cgroup_descriptor = KernelDescriptor(cgroup_file.as_fd());
 
-        let ingress_program_ids = cgroup_descriptor
+        let (_, ingress_program_ids) = cgroup_descriptor
             .attached_program_ids_by_type(
                 attach_type::AttachType::CgroupInetIngress,
                 QueryFlags::NONE,
@@ -136,6 +140,7 @@ mod tests {
                 .unwrap()
                 .as_ref()
                 .unwrap()
+                .1 // program_ids
                 .len(),
             1
         );
@@ -145,6 +150,7 @@ mod tests {
                 .unwrap()
                 .as_ref()
                 .unwrap()
+                .1 // program_ids
                 .len(),
             1
         );
