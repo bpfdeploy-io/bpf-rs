@@ -44,6 +44,7 @@ dependencies = [
  "nix",
  "num_enum",
  "serde",
+ "serde_test",
  "strum",
  "strum_macros",
  "thiserror",
@@ -263,6 +264,15 @@ checksum = "8e8d9fa5c3b304765ce1fd9c4c8a3de2c8db365a5b91be52f186efc675681d95"
 dependencies = [
  "itoa",
  "ryu",
+ "serde",
+]
+
+[[package]]
+name = "serde_test"
+version = "1.0.147"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "641666500e4e6fba7b91b73651a375cb53579468ab3c38389289b802797cad94"
+dependencies = [
  "serde",
 ]
 

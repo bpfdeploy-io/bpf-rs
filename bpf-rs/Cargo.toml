@@ -23,6 +23,7 @@ nix = "0.25.0"
 
 [dev-dependencies]
 bpfdeploy-libbpf-sys = "1.0.1"
+serde_test = "1.0.147"
 
 [features]
 serde = ["dep:serde", "bpf-rs-macros/serde"]
